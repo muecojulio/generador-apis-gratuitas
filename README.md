@@ -115,7 +115,7 @@ Repositorio → **Settings** → **Secrets and variables** → **Actions** → *
 
 | Nombre | ¿Obligatorio? | Para qué |
 | --- | --- | --- |
-| `GITHUB_PAT` | Sí | Hace el `push` de la nueva carpeta. Sin esto, el flujo no puede publicar. |
+| `GITHUB_PAT` | Recomendado | Da más margen de peticiones a la API de GitHub. El `push` de la carpeta nueva funciona igual sin él (el flujo usa el token propio de Actions), así que el taller ya sirve sin pegar nada aquí. |
 | `GEMINI_API_KEY` | No | Mejora la calidad del plano. Es gratis y sin tarjeta en [aistudio.google.com/apikey](https://aistudio.google.com/apikey). |
 | `KILO_API_KEY` | No | Solo si algún día quieres más cupo en Kilo. El taller funciona sin ella. |
 
@@ -166,7 +166,10 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
 - **GitHub Actions**: minutos ilimitados en repositorios públicos. Cada generación tarda ~1 minuto.
 - **Cupo amable**: una creación a la vez y 12 por hora, para que el taller no se descontrole.
 - **Datos**: se guardan en archivos dentro de `data/` de tu repositorio (`data/<api>.json`), no en una base
-  de datos de pago. Son públicos, igual que el repositorio: **no guardes contraseñas ni datos personales.**
+  de datos de pago. ⚠️ Son **públicos**, igual que el repositorio: **no guardes contraseñas, datos personales
+  ni nada delicado.** Es un taller para aprender y para prototipos.
+- **Una API por carpeta**: `api/<nombre>/spec.json`. Si borras la carpeta y ejecutas `npm run registrar`,
+  la API desaparece del taller (los datos de `data/<nombre>.json` los borras aparte).
 - **Lecturas sin clave**: leer funciona siempre. Para crear, actualizar o borrar hace falta `GITHUB_PAT`.
 
 ---

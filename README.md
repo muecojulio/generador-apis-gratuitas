@@ -43,7 +43,8 @@ Dos detalles importantes, explicados sin tecnicismos:
 3. Pulsa **Generar API en la nube**.
 4. En uno o dos minutos, `/api/tienda-barrio` responde.
 
-La API de ejemplo ya está lista para probar: `/api/ejemplo-notas`.
+Ya hay dos APIs de ejemplo listas para probar: `/api/ejemplo-notas` (la del taller) y `/api/demo-recetas`
+(creada de verdad por el flujo, sin ninguna clave, a partir de una descripción en español).
 
 ```bash
 # Ver las rutas que tiene una API
@@ -140,8 +141,21 @@ Los cinco primeros son servicios públicos que no cobran ni piden tarjeta. Si ni
 están lentos), el taller **no se rompe**: usa el lector incluido, que entiende descripciones claras de
 tablas y campos sin internet y sin ninguna clave. Por eso el botón funciona siempre.
 
-¿Quieres saber qué está respondiendo hoy? Pestaña **Actions** → *Probar proveedores de IA* → **Run
-workflow**. O desde tu computadora: `npm run proveedores`.
+### Comprobado el 14 de octubre de 2026 (sin ninguna clave)
+
+| Proveedor | ¿Respondió? | Tiempo | Plano que devolvió |
+| --- | --- | --- | --- |
+| LLM7 | Sí | 1,7 s | `recetas`, `ingredientes` con tipos y mínimos correctos |
+| OVHcloud AI | Sí | 5,9 s | el mismo plano, igual de correcto |
+| Pollinations | Sí | 2,4 s | el mismo plano, igual de correcto |
+| Kilo | Intermitente | — | su catálogo cambia a menudo; el taller lo intenta y sigue |
+
+La API de ejemplo `demo-recetas` que trae este repositorio se creó en esa prueba, **sin pegar ninguna
+clave**: el plano lo hizo OVHcloud en su capa anónima. Las tres primeras siguen funcionando hoy; el taller
+prueba una detrás de otra y, si las tres fallaran algún día, usa el lector incluido.
+
+¿Quieres ver qué está respondiendo ahora mismo? Pestaña **Actions** → *Probar proveedores de IA* →
+**Run workflow**. O desde tu computadora: `npm run proveedores`.
 
 ---
 

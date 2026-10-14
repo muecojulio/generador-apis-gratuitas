@@ -3,6 +3,7 @@
 # Se activa de dos maneras:
 #   1. repository_dispatch (tipo "generar-api"): lo dispara el botón de la página.
 #   2. workflow_dispatch: para lanzarlo a mano desde la pestaña Actions (pruebas).
+#   3. workflow_call: para que otro flujo del mismo repositorio lo use como pieza.
 #
 # Qué hace, en orden: revisa el nombre, hace un diseño (IA gratuita -> lector
 # incluido), escribe api/<nombre>/spec.json, actualiza el registro y el catálogo,
@@ -15,6 +16,21 @@ name: Generar API
 on:
   repository_dispatch:
     types: [generar-api]
+  workflow_call:
+    inputs:
+      nombre:
+        description: "Nombre de la ruta"
+        required: true
+        type: string
+      descripcion:
+        description: "Describe tablas, campos y acciones"
+        required: true
+        type: string
+      proveedor:
+        description: "Motor de IA: auto, gemini, llm7, kilo, ovh, pollinations o incluido"
+        required: false
+        default: auto
+        type: string
   workflow_dispatch:
     inputs:
       nombre:

@@ -1,5 +1,5 @@
-# TEMPORAL: comprueba el taller completo (IA gratuita + generación + commit) en
-# esta rama, sin tocar main. Se borra cuando termine la validación.
+# TEMPORAL: comprueba la cadena de IA gratuita y que el push funciona con las
+# acciones nuevas. Se borra al terminar la validación.
 
 name: Prueba del taller (temporal)
 
@@ -18,56 +18,37 @@ jobs:
   prueba:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      NOMBRE: demo-recetas
-      DESCRIPCION: |
-        Tabla recetas con campos:
-        - nombre (texto, obligatorio, máximo 120)
-        - comensales (entero, obligatorio, mínimo 1)
-        - tiempo_minutos (entero, obligatorio, mínimo 1)
-        - dificultad (texto, obligatorio)
-        - sin_gluten (sí o no)
-        - fecha_publicacion (fecha)
-
-        Tabla ingredientes con campos nombre (texto, obligatorio), cantidad (número, obligatorio, mínimo 0) y unidad (texto, obligatorio).
-
-        Quiero listar, crear, actualizar y borrar.
-        El tiempo no puede ser negativo y el nombre no puede estar vacío.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
           token: ${{ secrets.GITHUB_PAT || github.token }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
       - name: Pruebas del taller
         run: npm test
 
-      - name: ¿Qué modelos gratuitos responden?
+      - name: ¿Qué modelos gratuitos responden hoy?
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/probar-proveedores.mjs || true
+        run: |
+          mkdir -p pruebas
+          node scripts/probar-proveedores.mjs 2>&1 | tee pruebas/proveedores.txt
+          echo "-----" >> pruebas/proveedores.txt
+          echo "Node: $(node --version)" >> pruebas/proveedores.txt
 
-      - name: Generar una API de verdad
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/disenar.mjs
-
-      - name: Enseñar el plano
-        run: cat "api/${NOMBRE}/spec.json"
-
-      - name: Guardar en esta rama
+      - name: Guardar la evidencia en esta rama
         run: |
           git config user.name "muecojulio"
           git config user.email "324687122+muecojulio@users.noreply.github.com"
-          git add -- "api/${NOMBRE}" "lib/registro.js" "catalogo.json"
+          git add -- pruebas/proveedores.txt
           if git diff --cached --quiet; then
-            echo "Sin cambios nuevos."
+            echo "Sin cambios."
             exit 0
           fi
-          git commit -m "prueba: ${NOMBRE}"
+          git commit -m "prueba: evidencia de proveedores"
           git push
-          echo "Commit hecho: /api/${NOMBRE} quedará publicado tras el despliegue de Vercel."
+          echo "Push correcto con actions/checkout@v7."

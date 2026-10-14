@@ -1,21 +1,15 @@
 "use strict";
 
+/**
+ * POST /api/generar
+ * Recibe la descripción escrita en la página y pide a GitHub Actions que cree
+ * la carpeta de la API. La página nunca lleva claves dentro: la clave GITHUB_PAT
+ * vive solo aquí, en las variables de entorno de Vercel.
+ */
+
 const crypto = require("crypto");
 const gh = require("../lib/github");
-
-const RESERVADOS = new Set([
-  "generar",
-  "listar",
-  "salud",
-  "lib",
-  "scripts",
-  "specs",
-  "data",
-  "api",
-  "assets",
-  "public",
-  "static",
-]);
+const catalogo = require("../lib/catalogo");
 
 function enviar(res, status, data) {
   res.statusCode = status;
@@ -26,23 +20,8 @@ function enviar(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-function slug(valor) {
-  return String(valor || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
-
 function nombreValido(nombre) {
-  return (
-    nombre.length >= 2 &&
-    nombre.length <= 48 &&
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(nombre) &&
-    !RESERVADOS.has(nombre)
-  );
+  return catalogo.valido(nombre) && !String(nombre).startsWith("-");
 }
 
 function secretoOk(dado) {
@@ -57,27 +36,34 @@ function secretoOk(dado) {
 async function leerCuerpo(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") return req.body ? JSON.parse(req.body) : {};
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  const texto = Buffer.concat(chunks).toString("utf8");
-  if (texto.length > 20000) {
-    const error = new Error("La descripción es demasiado larga.");
-    error.status = 413;
-    throw error;
+  const partes = [];
+  let total = 0;
+  for await (const parte of req) {
+    total += parte.length;
+    if (total > 40000) {
+      const error = new Error("La descripción es demasiado larga.");
+      error.status = 413;
+      throw error;
+    }
+    partes.push(parte);
   }
+  const texto = Buffer.concat(partes).toString("utf8");
   return texto ? JSON.parse(texto) : {};
 }
 
+/** Cupo amable: una creación a la vez y 12 por hora, para no gastar el plan gratis. */
 async function cupo() {
   const res = await gh.pedir(
     "GET",
     "/repos/" + gh.OWNER + "/" + gh.REPO + "/actions/workflows/generar-api.yml/runs?per_page=20"
   );
   if (res.status !== 200 || !res.json) return;
-  const corridas = res.json.workflow_runs || [];
-  const activos = corridas.filter((corrida) => corrida.status === "queued" || corrida.status === "in_progress");
-  if (activos.length >= 1) {
-    const error = new Error("Hay una API creándose ahora. Espera un minuto e inténtalo de nuevo.");
+  const corridas = (res.json.workflow_runs || []).filter(
+    (corrida) => corrida.path === ".github/workflows/generar-api.yml"
+  );
+  const activas = corridas.filter((corrida) => corrida.status === "queued" || corrida.status === "in_progress");
+  if (activas.length >= 1) {
+    const error = new Error("Hay una API creándose ahora mismo. Espera un minuto y vuelve a intentarlo.");
     error.status = 429;
     throw error;
   }
@@ -97,16 +83,18 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (req.method !== "POST") {
-      enviar(res, 405, { error: "Usa POST." });
+      enviar(res, 405, { error: "Usa POST para pedir una API." });
       return;
     }
     if (!gh.token()) {
       enviar(res, 503, {
         error:
-          "Falta GITHUB_PAT en las variables de Vercel. La página ya está en línea; el botón se enciende cuando pegas esa clave.",
+          "Falta la clave GITHUB_PAT en las variables de Vercel. La página ya está en línea; el botón se enciende cuando pegas esa clave.",
+        ayuda: "https://github.com/" + gh.OWNER + "/" + gh.REPO + "#lo-único-que-hay-que-pegar-a-mano",
       });
       return;
     }
+
     let entrada;
     try {
       entrada = await leerCuerpo(req);
@@ -114,14 +102,16 @@ module.exports = async function handler(req, res) {
       enviar(res, error.status || 400, { error: error.status ? error.message : "No pude leer el formulario." });
       return;
     }
+
     if (!secretoOk(entrada.secreto)) {
       enviar(res, 401, { error: "La clave del taller no coincide." });
       return;
     }
+
     const descripcion = String(entrada.descripcion || "").trim();
-    const propuesto = slug(entrada.nombre || descripcion.slice(0, 48));
+    const propuesto = String(entrada.nombre || "").trim().toLowerCase();
     if (!nombreValido(propuesto)) {
-      enviar(res, 400, { error: "Elige un nombre más claro: letras, números y guiones. Mínimo 2 caracteres." });
+      enviar(res, 400, { error: "Elige un nombre claro: letras, números y guiones. De 2 a 48 caracteres." });
       return;
     }
     if (descripcion.length < 20) {
@@ -132,6 +122,7 @@ module.exports = async function handler(req, res) {
       enviar(res, 400, { error: "La descripción es demasiado larga. Recórtala un poco." });
       return;
     }
+
     try {
       await cupo();
     } catch (error) {
@@ -140,6 +131,7 @@ module.exports = async function handler(req, res) {
         return;
       }
     }
+
     const disparo = await gh.pedir("POST", "/repos/" + gh.OWNER + "/" + gh.REPO + "/dispatches", {
       event_type: "generar-api",
       client_payload: {
@@ -147,19 +139,23 @@ module.exports = async function handler(req, res) {
         descripcion: descripcion.slice(0, 8000),
       },
     });
+
     if (disparo.status !== 204 && disparo.status !== 200) {
       const detalle = (disparo.json && disparo.json.message) || "GitHub no aceptó el pedido.";
       enviar(res, 502, {
         error:
           detalle +
-          " Revisa que GITHUB_PAT tenga permiso de Contents (lectura y escritura) sobre este repositorio.",
+          " Revisa que GITHUB_PAT tenga permiso Contents (lectura y escritura) y acceso a este repositorio.",
+        estado: disparo.status,
       });
       return;
     }
+
     enviar(res, 202, {
       ok: true,
       nombre: propuesto,
-      mensaje: "Estoy creando la carpeta. En uno o dos minutos la dirección responderá.",
+      actualiza: Boolean(catalogo.buscar(propuesto)),
+      mensaje: "Pedido enviado. Estoy creando la carpeta; en uno o dos minutos la dirección responderá.",
     });
   } catch (error) {
     enviar(res, 500, { error: error.message || "No pude empezar la creación." });

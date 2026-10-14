@@ -1,6 +1,14 @@
 "use strict";
 
-const gh = require("../lib/github");
+/**
+ * GET /api/listar
+ * Devuelve las APIs publicadas en este taller. Lee el registro que va
+ * empaquetado con la función, así que responde al instante y funciona
+ * incluso sin ninguna variable de entorno configurada.
+ */
+
+const catalogo = require("../lib/catalogo");
+const detalle = require("../catalogo.json");
 
 function enviar(res, status, data) {
   res.statusCode = status;
@@ -10,7 +18,7 @@ function enviar(res, status, data) {
   res.end(JSON.stringify(data));
 }
 
-module.exports = async function handler(req, res) {
+module.exports = function handler(req, res) {
   if (req.method === "OPTIONS") {
     enviar(res, 204, {});
     return;
@@ -20,17 +28,15 @@ module.exports = async function handler(req, res) {
     return;
   }
   try {
-    const respuesta = await gh.pedir(
-      "GET",
-      "/repos/" + gh.OWNER + "/" + gh.REPO + "/contents/catalogo.json?ref=" + encodeURIComponent(gh.BRANCH)
-    );
-    if (respuesta.status !== 200 || !respuesta.json || !respuesta.json.content) {
-      enviar(res, 200, { apis: [] });
-      return;
-    }
-    const json = JSON.parse(Buffer.from(respuesta.json.content, "base64").toString("utf8"));
-    enviar(res, 200, { apis: json.apis || [] });
-  } catch {
-    enviar(res, 200, { apis: [] });
+    const fichas = new Map((detalle.apis || []).map((api) => [api.nombre, api]));
+    const apis = catalogo.publicadas().map((api) => ({
+      ...api,
+      ruta: "/api/" + api.nombre,
+      publicado: (fichas.get(api.nombre) || {}).publicado || null,
+      actualizado: (fichas.get(api.nombre) || {}).actualizado || null,
+    }));
+    enviar(res, 200, { total: apis.length, apis, taller: "/api/salud" });
+  } catch (error) {
+    enviar(res, 500, { error: error.message || "No pude leer el catálogo.", apis: [] });
   }
 };

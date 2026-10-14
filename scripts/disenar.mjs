@@ -1,183 +1,129 @@
+// @ts-nocheck
+/**
+ * El cerebro del taller.
+ *
+ * 1. Pide un plano (tablas, campos y reglas) a la IA gratuita.
+ * 2. Lo revisa y lo normaliza con lib/motor.mjs (nada de código ajeno).
+ * 3. Escribe api/<nombre>/spec.json y actualiza lib/registro.js y catalogo.json.
+ * 4. Antes de terminar, monta la API de verdad y comprueba que responde.
+ *
+ * Nunca escribe código de la IA: la IA solo devuelve datos (JSON). El programa
+ * que atiende las peticiones es siempre lib/runtime.js, revisado y fijo.
+ */
+
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { analizar, normalizar, slugValido, huella } from "../lib/motor.mjs";
+import { pedirPlano } from "../lib/ia.mjs";
+import { registrar } from "./registrar.mjs";
 
-const SISTEMA = `Eres el arquitecto de un taller de APIs REST gratuitas.
-Devuelves ÚNICAMENTE un objeto JSON, sin markdown y sin código, con esta forma exacta:
-{
-  "titulo": "nombre corto",
-  "resumen": "una frase de lo que hace la API",
-  "soloLectura": false,
-  "recursos": [
-    {
-      "nombre": "productos",
-      "titulo": "Productos",
-      "campos": [
-        {"nombre": "precio", "tipo": "numero", "requerido": true, "min": 0, "max": null}
-      ]
-    }
-  ]
-}
-Reglas:
-- tipo solo puede ser: texto, numero, entero, booleano, email, fecha.
-- Entre 1 y 6 recursos. Entre 1 y 12 campos por recurso.
-- nombres en minúsculas y sin acentos.
-- No incluyas id, creado ni actualizado.
-- Respeta tablas, campos, obligatorios, mínimos, máximos y si piden solo lectura.
-- No inventes recursos que la persona no pidió.
-- Si algo es ambiguo, elige la opción más simple y útil.`;
+const require = createRequire(import.meta.url);
+const { crear } = require("../lib/runtime.js");
 
-const MODELOS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.8-flash"];
+const RAIZ = process.cwd();
 
 function escribir(relativo, contenido) {
-  const raiz = process.cwd();
-  const destino = path.resolve(raiz, relativo);
-  if (!destino.startsWith(raiz + path.sep)) {
-    throw new Error("Ruta rechazada: " + relativo);
-  }
+  const destino = path.resolve(RAIZ, relativo);
+  if (!destino.startsWith(RAIZ + path.sep)) throw new Error("Ruta rechazada: " + relativo);
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.writeFileSync(destino, contenido);
 }
 
-function envolver(nombre) {
-  return (
-    '"use strict";\n' +
-    "const { crear } = require(\"../../lib/runtime\");\n" +
-    "module.exports = crear(require(\"../../specs/" +
-    nombre +
-    ".json\"));\n"
-  );
-}
-
-function extraerJson(texto) {
-  const limpio = String(texto || "")
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
-  const inicio = limpio.indexOf("{");
-  const fin = limpio.lastIndexOf("}");
-  if (inicio === -1 || fin === -1) throw new Error("La IA no devolvió JSON.");
-  return JSON.parse(limpio.slice(inicio, fin + 1));
-}
-
-async function pedirGemini(modelo, descripcion, conPensamientoCero) {
-  const clave = process.env.GEMINI_API_KEY;
-  const cuerpo = {
-    systemInstruction: { parts: [{ text: SISTEMA }] },
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text:
-              "Diseña el plano de esta API. Descripción de la persona:\n\n" +
-              descripcion,
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 4096,
-      responseMimeType: "application/json",
-      ...(conPensamientoCero ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
-    },
-  };
-  const respuesta = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" + modelo + ":generateContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": clave,
-      },
-      body: JSON.stringify(cuerpo),
-    }
-  );
-  const texto = await respuesta.text();
-  return { status: respuesta.status, texto };
-}
-
-async function gemini(descripcion) {
-  if (!process.env.GEMINI_API_KEY) return null;
-  let ultimo = "Ningún modelo gratuito respondió.";
-  for (const modelo of MODELOS) {
-    for (const silencio of [false, true]) {
-      const res = await pedirGemini(modelo, descripcion, silencio);
-      if (res.status === 404) break;
-      if (res.status === 400 && !silencio) continue;
-      if (res.status !== 200) {
-        ultimo = modelo + " respondió " + res.status + ": " + res.texto.slice(0, 240);
-        continue;
-      }
-      const json = JSON.parse(res.texto);
-      const bloqueo = json.promptFeedback && json.promptFeedback.blockReason;
-      if (bloqueo) throw new Error("La descripción fue rechazada por el filtro de seguridad.");
-      const partes = (((json.candidates || [])[0] || {}).content || {}).parts || [];
-      const unido = partes.map((parte) => parte.text || "").join("").trim();
-      if (!unido) {
-        ultimo = modelo + " no escribió un plano.";
-        continue;
-      }
-      return extraerJson(unido);
-    }
-  }
-  throw new Error(ultimo);
-}
-
 function actualizarCatalogo(spec) {
-  const ruta = path.resolve("catalogo.json");
+  const archivo = path.resolve(RAIZ, "catalogo.json");
   let catalogo = { apis: [] };
-  if (fs.existsSync(ruta)) {
-    catalogo = JSON.parse(fs.readFileSync(ruta, "utf8"));
+  if (fs.existsSync(archivo)) {
+    try {
+      catalogo = JSON.parse(fs.readFileSync(archivo, "utf8"));
+    } catch {
+      catalogo = { apis: [] };
+    }
   }
-  const apis = (catalogo.apis || []).filter((api) => api.nombre !== spec.nombre);
-  apis.unshift({
+  const anteriores = (catalogo.apis || []).filter((api) => api && api.nombre !== spec.nombre);
+  const previo = (catalogo.apis || []).find((api) => api && api.nombre === spec.nombre);
+  anteriores.unshift({
     nombre: spec.nombre,
     titulo: spec.titulo,
     resumen: spec.resumen,
     motor: spec.motor,
-    publicado: new Date().toISOString(),
+    publicado: (previo && previo.publicado) || new Date().toISOString(),
+    actualizado: new Date().toISOString(),
   });
-  fs.writeFileSync(ruta, JSON.stringify({ apis }, null, 2) + "\n");
+  fs.writeFileSync(archivo, JSON.stringify({ apis: anteriores }, null, 2) + "\n");
 }
 
-const nombre = String(process.env.NOMBRE || "").trim();
+/** Monta la API y pide su manifiesto: si esto pasa, la API funciona. */
+async function probarEnSeco(spec) {
+  const memoria = {
+    token: () => "prueba",
+    leer: async () => ({ datos: null, sha: null }),
+    guardar: async () => ({ sha: "1" }),
+  };
+  const manejador = crear(spec, { almacen: memoria });
+  let status = 0;
+  let cuerpo = "";
+  const res = {
+    setHeader() {},
+    end(datos) {
+      cuerpo = datos || "";
+    },
+    set statusCode(valor) {
+      status = valor;
+    },
+    get statusCode() {
+      return status;
+    },
+  };
+  const req = { method: "GET", url: "/api/" + spec.nombre, query: {}, headers: {} };
+  await manejador(req, res);
+  if (status !== 200) throw new Error("la API no respondió (estado " + status + ")");
+  const json = JSON.parse(cuerpo);
+  if (!Array.isArray(json.rutas) || !json.rutas.length) throw new Error("la API no publicó rutas");
+  return json.rutas;
+}
+
+const nombre = String(process.env.NOMBRE || "").trim().toLowerCase();
 const descripcion = String(process.env.DESCRIPCION || "").trim().slice(0, 8000);
+const aviso = (texto) => console.log("[taller] " + texto);
 
 if (!slugValido(nombre)) {
-  console.error("Nombre inválido. Usa letras minúsculas, números y guiones.");
+  console.error("Nombre inválido. Usa letras minúsculas, números y guiones (2 a 48 caracteres).");
   process.exit(1);
 }
 if (descripcion.length < 20) {
-  console.error("La descripción es demasiado corta.");
+  console.error("La descripción es demasiado corta: cuenta tablas, campos y acciones.");
   process.exit(1);
 }
 
-let spec;
-let motor = "analizador";
-if (process.env.GEMINI_API_KEY) {
-  try {
-    const plano = await gemini(descripcion);
-    spec = normalizar(plano, nombre, "gemini");
-    motor = "gemini";
-    console.log("Plano creado con Gemini (capa gratuita).");
-  } catch (error) {
-    console.error("Gemini falló:", error.message);
-    process.exit(1);
-  }
+let spec = null;
+let motor = "incluido";
+
+const respuesta = await pedirPlano({ descripcion, nombre, aviso });
+if (respuesta) {
+  spec = respuesta.spec;
+  motor = respuesta.proveedor;
 } else {
   spec = analizar(descripcion, nombre);
-  console.log("Sin GEMINI_API_KEY: usé el lector incluido.");
+  motor = "incluido";
+  aviso("Usé el lector incluido: funciona sin claves y sin internet.");
 }
 
+// Cinturón y tirantes: pase lo que pase, el plano siempre sale válido.
+spec = normalizar(spec, nombre, motor);
 spec.motor = motor;
 spec.huella = huella(descripcion);
 if (!spec.resumen) spec.resumen = descripcion.replace(/\s+/g, " ").slice(0, 280);
+spec.publicado = new Date().toISOString();
 
-escribir("specs/" + nombre + ".json", JSON.stringify(spec, null, 2) + "\n");
-escribir("api/" + nombre + "/index.js", envolver(nombre));
-escribir("api/" + nombre + "/[...ruta].js", envolver(nombre));
+const rutas = await probarEnSeco(spec);
+escribir("api/" + nombre + "/spec.json", JSON.stringify(spec, null, 2) + "\n");
+const { nombres } = registrar();
 actualizarCatalogo(spec);
-console.log("Listo: api/" + nombre + "/");
+
+console.log("Motor: " + motor);
+console.log("Carpeta: api/" + nombre + "/spec.json");
+console.log("Dirección: /api/" + nombre);
+console.log("Rutas publicadas:");
+for (const ruta of rutas) console.log("  " + ruta);
+console.log("APIs en el registro: " + nombres.length + " -> " + nombres.join(", "));

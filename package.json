@@ -1,8 +1,17 @@
 {
   "name": "generador-apis-gratuitas",
+  "version": "1.0.0",
   "private": true,
+  "description": "Taller que convierte una descripción en una API publicada, usando solo planes gratuitos.",
   "type": "commonjs",
   "engines": {
     "node": "22.x"
-  }
+  },
+  "scripts": {
+    "test": "node scripts/probar.mjs",
+    "local": "node scripts/servidor.mjs",
+    "registrar": "node scripts/registrar.mjs",
+    "proveedores": "node scripts/probar-proveedores.mjs"
+  },
+  "license": "MIT"
 }

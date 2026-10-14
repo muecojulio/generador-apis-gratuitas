@@ -1,0 +1,11 @@
+{
+  "apis": [
+    {
+      "nombre": "ejemplo-notas",
+      "titulo": "Notas de ejemplo",
+      "resumen": "Una API de muestra, lista para consultar antes de crear la tuya.",
+      "motor": "incluido",
+      "publicado": "2026-10-13T00:00:00.000Z"
+    }
+  ]
+}

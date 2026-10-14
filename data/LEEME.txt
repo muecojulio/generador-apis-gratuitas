@@ -1,0 +1,2 @@
+Esta carpeta guarda los datos de cada API.
+Un cambio que solo toque archivos de aquí no vuelve a publicar el sitio.

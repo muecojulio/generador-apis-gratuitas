@@ -1,0 +1,29 @@
+{
+  "nombre": "ejemplo-notas",
+  "titulo": "Notas de ejemplo",
+  "resumen": "Una API de muestra, lista para consultar antes de crear la tuya.",
+  "soloLectura": false,
+  "motor": "incluido",
+  "huella": "ejemplo",
+  "recursos": [
+    {
+      "nombre": "notas",
+      "titulo": "Notas",
+      "campos": [
+        { "nombre": "titulo", "tipo": "texto", "requerido": true, "min": 1, "max": 120 },
+        { "nombre": "cuerpo", "tipo": "texto", "requerido": false, "max": 2000 },
+        { "nombre": "hecha", "tipo": "booleano", "requerido": false }
+      ]
+    }
+  ],
+  "ejemplos": {
+    "notas": [
+      {
+        "id": "ej-notas-1",
+        "titulo": "Probar el taller",
+        "cuerpo": "Esta nota ya vive en la API de ejemplo.",
+        "hecha": false
+      }
+    ]
+  }
+}

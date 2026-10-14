@@ -1,0 +1,58 @@
+name: Generar API
+
+on:
+  repository_dispatch:
+    types: [generar-api]
+
+run-name: API ${{ github.event.client_payload.nombre }}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generar-api
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Traer el repositorio
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_PAT || github.token }}
+
+      - name: Comprobar el nombre
+        env:
+          NOMBRE: ${{ github.event.client_payload.nombre }}
+        run: node --input-type=module -e "import { slugValido } from './lib/motor.mjs'; if (!slugValido(process.env.NOMBRE || '')) { console.error('Nombre rechazado'); process.exit(1); } console.log('Nombre aceptado');"
+
+      - name: Diseñar la API y escribir la función
+        env:
+          NOMBRE: ${{ github.event.client_payload.nombre }}
+          DESCRIPCION: ${{ github.event.client_payload.descripcion }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/disenar.mjs
+
+      - name: Revisar que el archivo arranca
+        env:
+          NOMBRE: ${{ github.event.client_payload.nombre }}
+        run: |
+          node --check "api/${NOMBRE}/index.js"
+          node --check "api/${NOMBRE}/[...ruta].js"
+
+      - name: Publicar la carpeta api
+        env:
+          NOMBRE: ${{ github.event.client_payload.nombre }}
+        run: |
+          git config user.name "muecojulio"
+          git config user.email "324687122+muecojulio@users.noreply.github.com"
+          git add -- "api/${NOMBRE}" "specs/${NOMBRE}.json" catalogo.json
+          if git diff --cached --quiet; then
+            echo "No hubo cambios nuevos."
+            exit 0
+          fi
+          git commit -m "api: ${NOMBRE}"
+          git push

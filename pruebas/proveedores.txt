@@ -1,0 +1,30 @@
+Comprobando modelos gratuitos (nada de pago, ninguna tarjeta).
+
+- Gemini: no hay GEMINI_API_KEY; se salta. (Créala gratis en https://aistudio.google.com/apikey)
+
+- llm7: LLM7 (sin clave ni registro) -> https://api.llm7.io/v1/chat/completions
+- kilo: Kilo Gateway (sin clave ni registro) -> https://api.kilo.ai/api/gateway/chat/completions
+- ovh: OVHcloud AI Endpoints (sin clave ni registro) -> https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions
+- pollinations: Pollinations (sin clave ni registro) -> https://text.pollinations.ai/openai
+
+   · No hay ningún proveedor de IA configurado: se usa el lector incluido.
+FALLA gemini no sirvió (0.0s); el taller usaría el lector incluido.
+
+   · llm7: catálogo sugiere DeepSeek-V4-Flash-0731
+   · llm7/DeepSeek-V4-Flash-0731 respondió
+OK   llm7 respondió en 1.7s -> libros
+
+   · kilo: catálogo sugiere nvidia/nemotron-3-ultra-550b-a55b:free
+   · No sirvió kilo: kilo-auto/free: HTTP 0 | z-ai/glm-4.6:free: HTTP 404: {"error":"The requested model 'z-ai/glm-4.6:free' does not exist. Please use an exact model id as listed on /api/gateway/models. If this is a newly released mod… | catálogo: HTTP 0
+   · Ningún modelo gratuito respondió. Detalle: kilo: kilo-auto/free: HTTP 0 | z-ai/glm-4.6:free: HTTP 404: {"error":"The requested model 'z-ai/glm-4.6:free' does not exist. Please use an exact model id as listed on /api/gateway/models. If this is a newly released mod… | catálogo: HTTP 0
+FALLA kilo no sirvió (30.3s); el taller usaría el lector incluido.
+
+   · ovh/gpt-oss-120b respondió
+OK   ovh respondió en 5.9s -> libros
+
+   · pollinations/openai respondió
+OK   pollinations respondió en 2.4s -> libros
+
+Fin. El taller nunca se queda sin opciones: si nadie responde, usa el lector incluido.
+-----
+Node: v22.23.3

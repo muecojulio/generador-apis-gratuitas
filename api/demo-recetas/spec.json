@@ -1,0 +1,75 @@
+{
+  "nombre": "demo-recetas",
+  "titulo": "Recetas API",
+  "resumen": "Gestión de recetas e ingredientes",
+  "soloLectura": false,
+  "motor": "ovh",
+  "recursos": [
+    {
+      "nombre": "recetas",
+      "titulo": "Recetas",
+      "campos": [
+        {
+          "nombre": "nombre",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 120
+        },
+        {
+          "nombre": "comensales",
+          "tipo": "entero",
+          "requerido": true,
+          "min": 1
+        },
+        {
+          "nombre": "tiempo-minutos",
+          "tipo": "entero",
+          "requerido": true,
+          "min": 1
+        },
+        {
+          "nombre": "dificultad",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 500
+        },
+        {
+          "nombre": "sin-gluten",
+          "tipo": "booleano",
+          "requerido": false
+        },
+        {
+          "nombre": "fecha-publicacion",
+          "tipo": "fecha",
+          "requerido": false
+        }
+      ]
+    },
+    {
+      "nombre": "ingredientes",
+      "titulo": "Ingredientes",
+      "campos": [
+        {
+          "nombre": "nombre",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 500
+        },
+        {
+          "nombre": "cantidad",
+          "tipo": "numero",
+          "requerido": true,
+          "min": 0
+        },
+        {
+          "nombre": "unidad",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 500
+        }
+      ]
+    }
+  ],
+  "huella": "447317ae",
+  "publicado": "2026-10-14T05:53:26.477Z"
+}

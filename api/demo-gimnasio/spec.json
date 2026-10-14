@@ -1,0 +1,63 @@
+{
+  "nombre": "demo-gimnasio",
+  "titulo": "Socios y Rutinas",
+  "resumen": "API para gestionar socios y sus rutinas de entrenamiento.",
+  "soloLectura": false,
+  "motor": "llm7",
+  "recursos": [
+    {
+      "nombre": "socios",
+      "titulo": "Socios",
+      "campos": [
+        {
+          "nombre": "nombre",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 80
+        },
+        {
+          "nombre": "correo",
+          "tipo": "email",
+          "requerido": true,
+          "max": 160
+        },
+        {
+          "nombre": "alta",
+          "tipo": "fecha",
+          "requerido": true
+        },
+        {
+          "nombre": "cuota",
+          "tipo": "numero",
+          "requerido": true,
+          "min": 0
+        },
+        {
+          "nombre": "activo",
+          "tipo": "booleano",
+          "requerido": true
+        }
+      ]
+    },
+    {
+      "nombre": "rutinas",
+      "titulo": "Rutinas",
+      "campos": [
+        {
+          "nombre": "titulo",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 500
+        },
+        {
+          "nombre": "nivel",
+          "tipo": "texto",
+          "requerido": true,
+          "max": 500
+        }
+      ]
+    }
+  ],
+  "huella": "4a1b5e12",
+  "publicado": "2026-10-14T05:57:16.318Z"
+}

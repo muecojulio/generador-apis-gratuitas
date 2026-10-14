@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Taller — APIs gratuitas</title>
+    <title>Taller — crea tu API gratis, para siempre</title>
+    <meta
+      name="description"
+      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,9 +41,9 @@
       body { background: #121410; }
       textarea, input { font-size: 16px; }
       :focus-visible { outline: 2px solid #d4784a; outline-offset: 2px; }
-      @media (prefers-reduced-motion: reduce) {
-        * { transition: none !important; }
-      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+      .latido { animation: latido 1.6s ease-in-out infinite; }
+      @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
     </style>
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
@@ -51,22 +55,35 @@
         </svg>
         <span class="font-display text-xl tracking-tight">Taller</span>
       </a>
-      <a
-        class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline"
-        href="https://github.com/muecojulio/generador-apis-gratuitas"
-        >Código</a
-      >
+      <nav class="flex items-center gap-4 text-sm text-stone">
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#como-funciona">Cómo funciona</a>
+        <a
+          class="underline-offset-4 hover:text-ivory hover:underline"
+          href="https://github.com/muecojulio/generador-apis-gratuitas"
+          >Código</a
+        >
+      </nav>
     </header>
 
     <main class="mx-auto max-w-5xl px-5 pb-20">
-      <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">Un repositorio. Todas las APIs.</p>
-      <h1 class="mt-3 max-w-xl font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
+      <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">
+        Un repositorio · Todas las APIs · 0 € para siempre
+      </p>
+      <h1 class="mt-3 max-w-2xl font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
         Describe la API.<br />La nube la publica.
       </h1>
-      <p class="mt-4 max-w-xl text-base leading-relaxed text-stone">
-        Escribe las tablas, los campos y lo que se puede hacer. El taller abre una carpeta en este mismo
-        sitio y deja una dirección que ya responde. Sin tarjetas y sin servidores de pago.
+      <p class="mt-4 max-w-2xl text-base leading-relaxed text-stone">
+        Escribe las tablas, los campos y lo que se puede hacer. El taller abre la carpeta de esa API en este
+        mismo repositorio y deja una dirección que responde de verdad, con GET, POST, PUT y DELETE. Sin
+        tarjetas, sin servidores de pago y sin cuentas de pago.
       </p>
+
+      <div class="mt-8 flex flex-wrap gap-2 text-xs text-stone">
+        <span class="rounded-full border border-line px-3 py-1">GitHub Free</span>
+        <span class="rounded-full border border-line px-3 py-1">Vercel Hobby</span>
+        <span class="rounded-full border border-line px-3 py-1">IA gratuita: Gemini o sin clave</span>
+        <span class="rounded-full border border-line px-3 py-1">Datos en tu propio repositorio</span>
+      </div>
 
       <div class="mt-10 grid gap-6 lg:grid-cols-5">
         <form id="forma" class="rounded-[20px] border border-line bg-panel p-5 sm:p-6 lg:col-span-3">
@@ -76,36 +93,47 @@
             name="nombre"
             maxlength="48"
             autocomplete="off"
+            spellcheck="false"
             placeholder="tienda-barrio"
             class="mt-2 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/70"
           />
           <p id="ruta" class="mt-2 min-h-5 font-mono text-xs text-stone">/api/</p>
 
-          <label for="descripcion" class="mt-5 block text-sm font-medium">Qué debe hacer</label>
+          <label for="descripcion" class="mt-5 block text-sm font-medium">
+            Qué debe hacer (cuanto más detalle, mejor)
+          </label>
           <textarea
             id="descripcion"
             name="descripcion"
             required
-            rows="12"
-            placeholder="Tabla productos con campos:&#10;- nombre (texto, obligatorio, máximo 80)&#10;- precio (número, obligatorio, mínimo 0)&#10;- existencias (entero, obligatorio)&#10;- activo (sí o no)&#10;&#10;Tabla categorias con campos nombre y descripcion.&#10;Quiero listar, crear, actualizar y borrar."
-            class="mt-2 min-h-64 w-full resize-y rounded-xl border border-line bg-ink px-4 py-3 leading-relaxed text-ivory placeholder:text-stone/70"
+            rows="14"
+            spellcheck="false"
+            placeholder="Tabla productos con campos:&#10;- nombre (texto, obligatorio, máximo 80)&#10;- precio (número, obligatorio, mínimo 0)&#10;- existencias (entero, obligatorio)&#10;- activo (sí o no)&#10;&#10;Tabla categorias con campos nombre y descripcion.&#10;Quiero listar, crear, actualizar y borrar.&#10;El precio no puede ser negativo."
+            class="mt-2 min-h-72 w-full resize-y rounded-xl border border-line bg-ink px-4 py-3 leading-relaxed text-ivory placeholder:text-stone/70"
           ></textarea>
           <div class="mt-2 flex items-center justify-between gap-3 text-xs text-stone">
             <button type="button" id="ejemplo" class="underline-offset-4 hover:text-ivory hover:underline">
               Rellenar un ejemplo
             </button>
-            <span id="cuenta">0</span>
+            <span><span id="cuenta">0</span> caracteres</span>
           </div>
 
-          <label for="secreto" class="mt-5 block text-sm font-medium">Clave del taller</label>
-          <input
-            id="secreto"
-            name="secreto"
-            type="password"
-            autocomplete="off"
-            placeholder="Déjala vacía si no configuraste una"
-            class="mt-2 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/70"
-          />
+          <details class="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-stone">
+            <summary class="cursor-pointer select-none text-ivory">Clave del taller (opcional)</summary>
+            <p class="mt-2 leading-relaxed">
+              Si en Vercel definiste la variable <code class="text-ivory">GENERADOR_SECRETO</code>, escribe aquí
+              ese mismo valor. Si no la definiste, déjalo vacío: cualquiera que abra la página podrá crear
+              APIs.
+            </p>
+            <input
+              id="secreto"
+              name="secreto"
+              type="password"
+              autocomplete="off"
+              placeholder="Déjalo vacío si no configuraste una"
+              class="mt-3 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/70"
+            />
+          </details>
 
           <button
             id="enviar"
@@ -114,24 +142,49 @@
           >
             Generar API en la nube
           </button>
-          <p id="estado" class="mt-4 min-h-6 text-sm leading-relaxed text-stone" role="status"></p>
+          <p id="estado" class="mt-4 min-h-6 text-sm leading-relaxed text-stone" role="status" aria-live="polite"></p>
+          <div id="resultado" class="hidden"></div>
         </form>
 
         <aside class="flex flex-col gap-4 lg:col-span-2">
-          <section class="rounded-[20px] border border-line bg-panel p-5">
+          <section id="como-funciona" class="rounded-[20px] border border-line bg-panel p-5">
             <h2 class="font-display text-2xl">Cómo nace</h2>
             <ol class="mt-4 space-y-4 text-sm leading-relaxed text-stone">
               <li><span class="mr-2 font-display text-ivory">01</span>Describes tablas, campos y reglas.</li>
-              <li><span class="mr-2 font-display text-ivory">02</span>Se crea una carpeta dentro de <span class="text-ivory">api/</span>.</li>
-              <li><span class="mr-2 font-display text-ivory">03</span>La dirección queda viva en este mismo sitio.</li>
+              <li>
+                <span class="mr-2 font-display text-ivory">02</span>GitHub Actions escribe
+                <span class="text-ivory">api/tu-nombre/spec.json</span> y regenera el registro.
+              </li>
+              <li>
+                <span class="mr-2 font-display text-ivory">03</span>Vercel publica
+                <span class="text-ivory">/api/tu-nombre</span> con las rutas listas.
+              </li>
             </ol>
+            <p class="mt-4 border-t border-line pt-4 text-xs leading-relaxed text-stone">
+              La IA solo devuelve un <span class="text-ivory">plano</span> (qué tablas, qué campos, qué
+              reglas). El programa que atiende las peticiones es siempre del taller, revisado y fijo: ningún
+              texto tuyo se convierte en código ejecutable.
+            </p>
           </section>
+
           <section id="plano" class="rounded-[20px] border border-line p-5">
             <h2 class="font-display text-2xl">Vista previa</h2>
             <p class="mt-2 text-sm leading-relaxed text-stone">
-              Mientras escribes, el lector arma las rutas. Si más adelante pegas la clave gratuita de Gemini, el
-              plano final afina los detalles.
+              Mientras escribes, el lector del taller arma las rutas aquí mismo, sin enviar nada a ningún
+              servidor.
             </p>
+          </section>
+
+          <section class="rounded-[20px] border border-line bg-panel p-5 text-sm leading-relaxed text-stone">
+            <h2 class="font-display text-2xl text-ivory">Coste</h2>
+            <p class="mt-3">
+              <span class="text-ivory">Cero.</span> El botón usa GitHub Actions en su capa gratuita, la IA es
+              Gemini (plan gratuito, sin tarjeta) o un servicio público sin clave, y las APIs viven en el plan
+              Hobby de Vercel.
+            </p>
+            <a class="mt-3 inline-block text-clay underline-offset-4 hover:underline" href="/api/salud"
+              >Ver el estado del taller</a
+            >
           </section>
         </aside>
       </div>
@@ -139,13 +192,65 @@
       <section class="mt-14">
         <div class="flex items-end justify-between gap-4">
           <h2 class="font-display text-3xl">APIs de este taller</h2>
-          <button type="button" id="recargar" class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline">
+          <button
+            type="button"
+            id="recargar"
+            class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline"
+          >
             Actualizar
           </button>
         </div>
+        <p class="mt-2 text-sm text-stone">
+          Todas viven bajo la misma dirección, cada una en su ruta. Ábrela para ver sus rutas disponibles.
+        </p>
         <div id="lista" class="mt-4 divide-y divide-line border-y border-line"></div>
       </section>
+
+      <section class="mt-14 rounded-[20px] border border-line bg-panel p-5 sm:p-6">
+        <h2 class="font-display text-2xl">Ejemplos de uso</h2>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <p class="text-sm text-stone">Listar los datos de un recurso</p>
+            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas/notas</pre>
+          </div>
+          <div>
+            <p class="text-sm text-stone">Crear un registro</p>
+            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl -X POST https://TU-SITIO.vercel.app/api/ejemplo-notas/notas \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Mi primera nota"}'</pre>
+          </div>
+          <div>
+            <p class="text-sm text-stone">Ver las rutas de una API</p>
+            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas</pre>
+          </div>
+          <div>
+            <p class="text-sm text-stone">Guardar cambios necesita una clave</p>
+            <p class="mt-2 text-xs leading-relaxed text-stone">
+              Las lecturas funcionan siempre. Para crear, actualizar o borrar, pega la clave
+              <code class="text-ivory">GITHUB_PAT</code> en Vercel: los datos se guardan como archivos dentro
+              de <code class="text-ivory">data/</code> en tu propio repositorio, sin base de datos de pago.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <footer class="border-t border-line">
+      <div class="mx-auto flex max-w-5xl flex-col gap-2 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
+        <p>Hecho con planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre.</p>
+        <p>
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">/api/salud</a>
+          ·
+          <a
+            class="underline-offset-4 hover:text-ivory hover:underline"
+            href="https://github.com/muecojulio/generador-apis-gratuitas#readme"
+            >Guía</a
+          >
+        </p>
+      </div>
+    </footer>
 
     <script type="module" src="/script.js"></script>
   </body>

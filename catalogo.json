@@ -1,6 +1,22 @@
 {
   "apis": [
     {
+      "nombre": "demo-gimnasio",
+      "titulo": "Socios y Rutinas",
+      "resumen": "API para gestionar socios y sus rutinas de entrenamiento.",
+      "motor": "llm7",
+      "publicado": "2026-10-14T05:57:16.327Z",
+      "actualizado": "2026-10-14T05:57:16.327Z"
+    },
+    {
+      "nombre": "demo-recetas",
+      "titulo": "Recetas API",
+      "resumen": "Gestión de recetas e ingredientes",
+      "motor": "ovh",
+      "publicado": "2026-10-14T05:53:26.491Z",
+      "actualizado": "2026-10-14T05:53:26.491Z"
+    },
+    {
       "nombre": "ejemplo-notas",
       "titulo": "Notas de ejemplo",
       "resumen": "Una API de muestra, lista para consultar antes de crear la tuya.",

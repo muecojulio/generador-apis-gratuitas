@@ -1,0 +1,38 @@
+# Comprobación manual: ¿qué modelos gratuitos están respondiendo hoy?
+#
+# Pestaña Actions -> "Probar proveedores de IA" -> Run workflow.
+# No crea ninguna API ni cambia ningún archivo: solo informa.
+# Coste: 0 (capa gratuita de GitHub Actions).
+
+name: Probar proveedores de IA
+
+on:
+  workflow_dispatch:
+    inputs:
+      solo:
+        description: "Probar solo uno: gemini, llm7, kilo, ovh o pollinations (vacío = todos)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Traer el repositorio
+        uses: actions/checkout@v7
+
+      - name: Preparar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Preguntar a cada modelo gratuito
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SOLO: ${{ inputs.solo }}
+        run: node scripts/probar-proveedores.mjs

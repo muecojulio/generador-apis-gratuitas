@@ -10,6 +10,7 @@
   "scripts": {
     "test": "node scripts/probar.mjs",
     "local": "node scripts/servidor.mjs",
+    "disenar": "node scripts/disenar.mjs",
     "registrar": "node scripts/registrar.mjs",
     "proveedores": "node scripts/probar-proveedores.mjs"
   },

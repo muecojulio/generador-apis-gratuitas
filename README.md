@@ -33,7 +33,7 @@ elige un nombre y listo: no hace falta IA ni esperar a que un modelo responda.
 También se pueden clonar desde la terminal (sin tocar la nube):
 
 ```bash
-PLANTILLA=notas NOMBRE=mis-notas node scripts/disenar.mjs
+PLANTILLA=notas NOMBRE=mis-notas npm run disenar
 ```
 
 Las plantillas son **datos puros** en `plantillas/*.json`. No traen código. Al clonar, el taller escribe
@@ -340,6 +340,7 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
 ```bash
 npm test          # pruebas del lector, motor, registro, plantillas, OpenAPI, límites y token
 npm run local     # servidor local en http://localhost:3000
+npm run disenar   # crea una API desde NOMBRE + DESCRIPCION o desde PLANTILLA
 npm run registrar # rehace lib/registro.js tras tocar api/<nombre>/spec.json
 npm run proveedores # prueba los modelos gratuitos
 ```
@@ -352,7 +353,7 @@ Para probar la generación completa sin tocar la nube:
 ```bash
 GENERADOR_SIN_IA=1 NOMBRE=mi-prueba \
 DESCRIPCION="Tabla tareas con campos titulo (texto, obligatorio) y hecha (si o no)." \
-node scripts/disenar.mjs
+npm run disenar
 ```
 
 Para clonar una plantilla y añadirle token desde la terminal:
@@ -364,7 +365,7 @@ TOKEN_ACCION=poner \
 TOKEN_HASH=$(printf '%s' "$TOKEN" | sha256sum | cut -d' ' -f1) \
 TOKEN_MODO=escritura \
 LIMITES='{"maxRegistrosPorRecurso":250,"retencionDias":14}' \
-node scripts/disenar.mjs
+npm run disenar
 ```
 
 ---

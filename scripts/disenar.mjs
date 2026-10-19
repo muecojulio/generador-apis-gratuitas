@@ -14,8 +14,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { analizar, normalizar, slugValido, huella } from "../lib/motor.mjs";
+import { analizar, normalizar, normalizarLimites, slugValido, huella } from "../lib/motor.mjs";
 import { pedirPlano } from "../lib/ia.mjs";
+import plantillas from "../lib/plantillas.js";
 import { registrar } from "./registrar.mjs";
 
 const require = createRequire(import.meta.url);
@@ -47,6 +48,10 @@ function actualizarCatalogo(spec) {
     titulo: spec.titulo,
     resumen: spec.resumen,
     motor: spec.motor,
+    origen: spec.origen || "",
+    soloLectura: Boolean(spec.soloLectura),
+    protegida: Boolean(spec.auth && spec.auth.hash),
+    limites: spec.limites,
     publicado: (previo && previo.publicado) || new Date().toISOString(),
     actualizado: new Date().toISOString(),
   });
@@ -84,29 +89,56 @@ async function probarEnSeco(spec) {
 }
 
 const nombre = String(process.env.NOMBRE || "").trim().toLowerCase();
-const descripcion = String(process.env.DESCRIPCION || "").trim().slice(0, 8000);
 const aviso = (texto) => console.log("[taller] " + texto);
+const clavePlantilla = String(process.env.PLANTILLA || "").trim().toLowerCase();
+const plantilla = clavePlantilla ? plantillas.buscar(clavePlantilla) : null;
+
+if (clavePlantilla && !plantilla) {
+  console.error("Plantilla desconocida: " + clavePlantilla + ". Disponibles: " + plantillas.claves.join(", "));
+  process.exit(1);
+}
+
+const descripcion = plantilla
+  ? String(plantilla.descripcion).trim()
+  : String(process.env.DESCRIPCION || "").trim().slice(0, 8000);
 
 if (!slugValido(nombre)) {
   console.error("Nombre inválido. Usa letras minúsculas, números y guiones (2 a 48 caracteres).");
   process.exit(1);
 }
-if (descripcion.length < 20) {
+if (!plantilla && descripcion.length < 20) {
   console.error("La descripción es demasiado corta: cuenta tablas, campos y acciones.");
   process.exit(1);
+}
+
+// Lo que ya exista se conserva si el pedido no dice lo contrario.
+const archivoPrevio = path.resolve(RAIZ, "api", nombre, "spec.json");
+let previo = null;
+if (fs.existsSync(archivoPrevio)) {
+  try {
+    previo = JSON.parse(fs.readFileSync(archivoPrevio, "utf8"));
+  } catch {
+    previo = null;
+  }
 }
 
 let spec = null;
 let motor = "incluido";
 
-const respuesta = await pedirPlano({ descripcion, nombre, aviso });
-if (respuesta) {
-  spec = respuesta.spec;
-  motor = respuesta.proveedor;
+if (plantilla) {
+  spec = plantillas.specDe(plantilla.clave, nombre);
+  motor = "plantilla";
+  aviso("Usé la plantilla «" + plantilla.clave + "» (datos puros, sin IA).");
 } else {
-  spec = analizar(descripcion, nombre);
-  motor = "incluido";
-  aviso("Usé el lector incluido: funciona sin claves y sin internet.");
+  const respuesta = await pedirPlano({ descripcion, nombre, aviso });
+  if (respuesta) {
+    spec = respuesta.spec;
+    motor = respuesta.proveedor;
+  } else {
+    spec = analizar(descripcion, nombre);
+    motor = "incluido";
+    aviso("Usé el lector incluido: funciona sin claves y sin internet.");
+  }
 }
 
 // Cinturón y tirantes: pase lo que pase, el plano siempre sale válido.
@@ -115,6 +147,55 @@ spec.motor = motor;
 spec.huella = huella(descripcion);
 if (!spec.resumen) spec.resumen = descripcion.replace(/\s+/g, " ").slice(0, 280);
 spec.publicado = new Date().toISOString();
+if (plantilla) spec.origen = "plantilla:" + plantilla.clave;
+if (plantilla && plantilla.spec.ejemplos) spec.ejemplos = plantilla.spec.ejemplos;
+
+// --- Solo lectura ---------------------------------------------------------
+const soloLecturaEnv = String(process.env.SOLO_LECTURA || "").trim();
+if (soloLecturaEnv) {
+  spec.soloLectura = /^(1|true|si|sí|yes)$/i.test(soloLecturaEnv);
+} else if (plantilla) {
+  spec.soloLectura = Boolean(plantilla.spec.soloLectura);
+} else if (previo && typeof previo.soloLectura === "boolean") {
+  spec.soloLectura = previo.soloLectura;
+}
+
+// --- Límites y retención --------------------------------------------------
+const limitesEnv = String(process.env.LIMITES || "").trim();
+let limitesExtra = null;
+if (limitesEnv) {
+  try {
+    limitesExtra = JSON.parse(limitesEnv);
+  } catch {
+    console.error("LIMITES no es JSON válido.");
+    process.exit(1);
+  }
+}
+if (limitesExtra) {
+  spec.limites = normalizarLimites({ ...spec.limites, ...limitesExtra });
+} else if (plantilla) {
+  spec.limites = normalizarLimites(plantilla.spec.limites);
+} else if (previo && previo.limites) {
+  spec.limites = normalizarLimites(previo.limites);
+}
+// Si no hay ninguna fuente, normalizar() ya dejó los valores por defecto.
+
+// --- Token opcional -------------------------------------------------------
+const accionToken = String(process.env.TOKEN_ACCION || "").trim().toLowerCase();
+const tokenHash = String(process.env.TOKEN_HASH || "").trim().toLowerCase();
+const tokenModo = String(process.env.TOKEN_MODO || "escritura").trim().toLowerCase() === "todo" ? "todo" : "escritura";
+if (accionToken === "quitar") {
+  spec.auth = null;
+} else if (accionToken === "poner" || tokenHash) {
+  if (!/^[a-f0-9]{64}$/.test(tokenHash)) {
+    console.error("TOKEN_HASH inválido: deben ser 64 caracteres hexadecimales (SHA-256).");
+    process.exit(1);
+  }
+  spec.auth = { tipo: "token", hash: tokenHash, modo: tokenModo };
+} else if (!spec.auth && previo && previo.auth) {
+  // Al regenerar sin decir nada, no le quitamos la protección a una API existente.
+  spec.auth = previo.auth;
+}
 
 const rutas = await probarEnSeco(spec);
 escribir("api/" + nombre + "/spec.json", JSON.stringify(spec, null, 2) + "\n");

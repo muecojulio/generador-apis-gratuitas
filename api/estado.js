@@ -11,6 +11,7 @@
 
 const gh = require("../lib/github");
 const catalogo = require("../lib/catalogo");
+const { limitesDe } = require("../lib/limites");
 
 function enviar(res, status, data) {
   res.statusCode = status;
@@ -38,6 +39,11 @@ module.exports = async function handler(req, res) {
     motor: spec ? spec.motor || "incluido" : null,
     titulo: spec ? spec.titulo : null,
     rutas: spec ? contarRutas(spec) : null,
+    soloLectura: spec ? Boolean(spec.soloLectura) : null,
+    protegida: spec ? Boolean(spec.auth && spec.auth.hash) : null,
+    limites: spec ? limitesDe(spec) : null,
+    documentacion: spec ? "/docs?api=" + encodeURIComponent(nombre) : null,
+    openapi: spec ? "/api/" + nombre + "/openapi.json" : null,
     corrida: null,
     enlace: "https://github.com/" + gh.OWNER + "/" + gh.REPO + "/actions",
     acciones: { intentos: 0, esperando: 0, listo: 0 },

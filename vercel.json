@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "cleanUrls": true,
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)data' || exit 1",
   "headers": [
     {
@@ -8,7 +9,11 @@
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-API-Token" },
+        {
+          "key": "Access-Control-Expose-Headers",
+          "value": "X-Limite-Registros, X-Retencion-Dias, X-Total-Registros"
+        }
       ]
     },
     {

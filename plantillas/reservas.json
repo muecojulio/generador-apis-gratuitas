@@ -1,0 +1,67 @@
+{
+  "clave": "reservas",
+  "titulo": "Reservas",
+  "resumen": "Reservas de mesas con fecha, hora, personas y estado.",
+  "sugerencia": "mis-reservas",
+  "descripcion": "Tabla reservas con campos:\n- cliente (texto, obligatorio, máximo 100)\n- correo (email, máximo 160)\n- fecha (fecha, obligatorio)\n- hora (texto, obligatorio, máximo 5)\n- personas (entero, obligatorio, mínimo 1, máximo 50)\n- mesa (texto, máximo 20)\n- estado (texto, valores: pendiente, confirmada, cancelada)\n- notas (texto, máximo 500)\nTabla mesas con campos:\n- numero (entero, obligatorio, mínimo 1)\n- capacidad (entero, obligatorio, mínimo 1)\n- zona (texto, máximo 40)\n- disponible (sí o no)\nQuiero listar, crear, actualizar y borrar reservas.",
+  "spec": {
+    "titulo": "Reservas",
+    "resumen": "Reservas de mesas con fecha, hora, personas y estado.",
+    "soloLectura": false,
+    "limites": {
+      "maxRegistrosPorRecurso": 500,
+      "maxBytes": 262144,
+      "retencionDias": 365
+    },
+    "recursos": [
+      {
+        "nombre": "reservas",
+        "titulo": "Reservas",
+        "campos": [
+          { "nombre": "cliente", "tipo": "texto", "requerido": true, "min": 1, "max": 100 },
+          { "nombre": "correo", "tipo": "email", "requerido": false, "max": 160 },
+          { "nombre": "fecha", "tipo": "fecha", "requerido": true },
+          { "nombre": "hora", "tipo": "texto", "requerido": true, "min": 4, "max": 5 },
+          { "nombre": "personas", "tipo": "entero", "requerido": true, "min": 1, "max": 50 },
+          { "nombre": "mesa", "tipo": "texto", "requerido": false, "max": 20 },
+          { "nombre": "estado", "tipo": "texto", "requerido": false, "max": 20, "valores": ["pendiente", "confirmada", "cancelada"] },
+          { "nombre": "notas", "tipo": "texto", "requerido": false, "max": 500 }
+        ]
+      },
+      {
+        "nombre": "mesas",
+        "titulo": "Mesas",
+        "campos": [
+          { "nombre": "numero", "tipo": "entero", "requerido": true, "min": 1 },
+          { "nombre": "capacidad", "tipo": "entero", "requerido": true, "min": 1 },
+          { "nombre": "zona", "tipo": "texto", "requerido": false, "max": 40 },
+          { "nombre": "disponible", "tipo": "booleano", "requerido": true }
+        ]
+      }
+    ],
+    "ejemplos": {
+      "reservas": [
+        {
+          "id": "ej-reservas-1",
+          "cliente": "Ana Pérez",
+          "correo": "ana@example.com",
+          "fecha": "2026-10-24",
+          "hora": "20:30",
+          "personas": 4,
+          "mesa": "Mesa 4",
+          "estado": "confirmada",
+          "notas": "Sin cebolla, por favor."
+        }
+      ],
+      "mesas": [
+        {
+          "id": "ej-mesas-1",
+          "numero": 4,
+          "capacidad": 6,
+          "zona": "Terraza",
+          "disponible": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "clave": "notas",
+  "titulo": "Notas",
+  "resumen": "Bloc de notas con título, cuerpo, etiqueta y estado.",
+  "sugerencia": "mis-notas",
+  "descripcion": "Tabla notas con campos:\n- titulo (texto, obligatorio, máximo 120)\n- cuerpo (texto, máximo 4000)\n- etiqueta (texto, máximo 40)\n- hecha (sí o no)\n- fecha (fecha)\nQuiero listar, crear, actualizar y borrar notas.",
+  "spec": {
+    "titulo": "Notas",
+    "resumen": "Bloc de notas con título, cuerpo, etiqueta y estado.",
+    "soloLectura": false,
+    "limites": {
+      "maxRegistrosPorRecurso": 500,
+      "maxBytes": 262144,
+      "retencionDias": 90
+    },
+    "recursos": [
+      {
+        "nombre": "notas",
+        "titulo": "Notas",
+        "campos": [
+          { "nombre": "titulo", "tipo": "texto", "requerido": true, "min": 1, "max": 120 },
+          { "nombre": "cuerpo", "tipo": "texto", "requerido": false, "max": 4000 },
+          { "nombre": "etiqueta", "tipo": "texto", "requerido": false, "max": 40 },
+          { "nombre": "hecha", "tipo": "booleano", "requerido": false },
+          { "nombre": "fecha", "tipo": "fecha", "requerido": false }
+        ]
+      }
+    ],
+    "ejemplos": {
+      "notas": [
+        {
+          "id": "ej-notas-1",
+          "titulo": "Ideas para la semana",
+          "cuerpo": "Llamar al taller, revisar el inventario y preparar la reunión del viernes.",
+          "etiqueta": "trabajo",
+          "hecha": false
+        },
+        {
+          "id": "ej-notas-2",
+          "titulo": "Lista del mercado",
+          "cuerpo": "Café, pan, fruta y algo rico para el domingo.",
+          "etiqueta": "casa",
+          "hecha": true
+        }
+      ]
+    }
+  }
+}

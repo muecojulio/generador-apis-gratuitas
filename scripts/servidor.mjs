@@ -22,6 +22,9 @@ const ESTATICOS = {
   "/": "index.html",
   "/index.html": "index.html",
   "/script.js": "script.js",
+  "/docs": "docs.html",
+  "/docs.html": "docs.html",
+  "/docs.js": "docs.js",
   "/favicon.svg": "favicon.svg",
   "/lib/motor.mjs": "lib/motor.mjs",
 };
@@ -102,7 +105,7 @@ const servidor = http.createServer(async (req, res) => {
   req.query = {};
   for (const [clave, valor] of url.searchParams.entries()) req.query[clave] = valor;
 
-  const fijos = new Set(["generar", "listar", "salud", "estado"]);
+  const fijos = new Set(["generar", "listar", "salud", "estado", "plantillas"]);
   let manejador;
   if (fijos.has(resto[0]) && resto.length === 1) {
     manejador = cargar("api/" + resto[0] + ".js");

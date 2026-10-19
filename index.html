@@ -55,7 +55,9 @@
         </svg>
         <span class="font-display text-xl tracking-tight">Taller</span>
       </a>
-      <nav class="flex items-center gap-4 text-sm text-stone">
+      <nav class="flex flex-wrap items-center gap-4 text-sm text-stone">
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#plantillas">Plantillas</a>
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">Documentación</a>
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="#como-funciona">Cómo funciona</a>
         <a
           class="underline-offset-4 hover:text-ivory hover:underline"
@@ -74,7 +76,8 @@
       </h1>
       <p class="mt-4 max-w-2xl text-base leading-relaxed text-stone">
         Escribe las tablas, los campos y lo que se puede hacer. El taller abre la carpeta de esa API en este
-        mismo repositorio y deja una dirección que responde de verdad, con GET, POST, PUT y DELETE. Sin
+        mismo repositorio y deja una dirección que responde de verdad, con GET, POST, PUT y DELETE. Además,
+        cada API nace con su documentación OpenAPI, límites de tamaño y retención, y un token opcional. Sin
         tarjetas, sin servidores de pago y sin cuentas de pago.
       </p>
 
@@ -82,8 +85,31 @@
         <span class="rounded-full border border-line px-3 py-1">GitHub Free</span>
         <span class="rounded-full border border-line px-3 py-1">Vercel Hobby</span>
         <span class="rounded-full border border-line px-3 py-1">IA gratuita: Gemini o sin clave</span>
+        <span class="rounded-full border border-line px-3 py-1">OpenAPI automático</span>
+        <span class="rounded-full border border-line px-3 py-1">Token opcional</span>
+        <span class="rounded-full border border-line px-3 py-1">Límites por API</span>
         <span class="rounded-full border border-line px-3 py-1">Datos en tu propio repositorio</span>
       </div>
+
+      <section id="plantillas" class="mt-12">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">Atajos</p>
+            <h2 class="mt-2 font-display text-3xl">Plantillas listas para clonar</h2>
+          </div>
+          <a href="/docs" class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline"
+            >Ver documentación →</a
+          >
+        </div>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-stone">
+          Notas, inventario y reservas ya tienen tablas, campos, ejemplos y límites pensados. Ponles un nombre y
+          pulsa <span class="text-ivory">Clonar</span>: no hace falta describir nada ni esperar a la IA.
+        </p>
+        <div id="plantillas-lista" class="mt-4 grid gap-4 md:grid-cols-3">
+          <p class="rounded-xl border border-line px-4 py-6 text-sm text-stone">Cargando plantillas…</p>
+        </div>
+        <div id="resultado-clon" class="hidden"></div>
+      </section>
 
       <div class="mt-10 grid gap-6 lg:grid-cols-5">
         <form id="forma" class="rounded-[20px] border border-line bg-panel p-5 sm:p-6 lg:col-span-3">
@@ -117,6 +143,81 @@
             </button>
             <span><span id="cuenta">0</span> caracteres</span>
           </div>
+
+          <details class="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-stone">
+            <summary class="cursor-pointer select-none text-ivory">Ajustes de la API (opcionales)</summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <label class="flex items-start gap-2 leading-relaxed">
+                <input id="solo-lectura" type="checkbox" class="mt-1 h-4 w-4 accent-[#d4784a]" />
+                <span><span class="text-ivory">Solo lectura.</span> Solo se publican rutas GET.</span>
+              </label>
+              <label class="flex items-start gap-2 leading-relaxed">
+                <input id="con-token" type="checkbox" class="mt-1 h-4 w-4 accent-[#d4784a]" />
+                <span
+                  ><span class="text-ivory">Token opcional.</span> Se crea en tu navegador; al servidor solo
+                  viaja su huella SHA-256.</span
+                >
+              </label>
+              <div>
+                <label for="token-modo" class="block text-xs uppercase tracking-wider text-stone"
+                  >Protección del token</label
+                >
+                <select
+                  id="token-modo"
+                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory disabled:opacity-50"
+                  disabled
+                >
+                  <option value="escritura">Solo escritura (lecturas públicas)</option>
+                  <option value="todo">Todo (lectura y escritura)</option>
+                </select>
+              </div>
+              <div>
+                <label for="max-registros" class="block text-xs uppercase tracking-wider text-stone"
+                  >Máximo de registros por recurso</label
+                >
+                <input
+                  id="max-registros"
+                  type="number"
+                  min="1"
+                  max="5000"
+                  value="500"
+                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                />
+              </div>
+              <div>
+                <label for="retencion" class="block text-xs uppercase tracking-wider text-stone"
+                  >Retención en días (0 = no borrar)</label
+                >
+                <input
+                  id="retencion"
+                  type="number"
+                  min="0"
+                  max="3650"
+                  value="0"
+                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                />
+              </div>
+              <div>
+                <label for="max-kb" class="block text-xs uppercase tracking-wider text-stone"
+                  >Tamaño máximo en KB</label
+                >
+                <input
+                  id="max-kb"
+                  type="number"
+                  min="4"
+                  max="512"
+                  value="256"
+                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                />
+              </div>
+            </div>
+            <p class="mt-3 text-xs leading-relaxed">
+              El token se muestra una sola vez al terminar; guárdalo. Si vuelves a generar una API protegida
+              sin marcar la casilla, se le quita la protección. Las plantillas ya traen sus propios límites:
+              estos campos se usan al describir una API desde cero o cuando los cambias antes de clonar. El
+              tamaño del archivo de datos no puede pasar de 512 KB.
+            </p>
+          </details>
 
           <details class="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-stone">
             <summary class="cursor-pointer select-none text-ivory">Clave del taller (opcional)</summary>
@@ -159,12 +260,33 @@
                 <span class="mr-2 font-display text-ivory">03</span>Vercel publica
                 <span class="text-ivory">/api/tu-nombre</span> con las rutas listas.
               </li>
+              <li>
+                <span class="mr-2 font-display text-ivory">04</span>La documentación queda en
+                <span class="text-ivory">/docs?api=tu-nombre</span> y el plano en
+                <span class="text-ivory">/api/tu-nombre/openapi.json</span>.
+              </li>
             </ol>
             <p class="mt-4 border-t border-line pt-4 text-xs leading-relaxed text-stone">
               La IA solo devuelve un <span class="text-ivory">plano</span> (qué tablas, qué campos, qué
               reglas). El programa que atiende las peticiones es siempre del taller, revisado y fijo: ningún
               texto tuyo se convierte en código ejecutable.
             </p>
+          </section>
+
+          <section class="rounded-[20px] border border-line p-5">
+            <h2 class="font-display text-2xl">Documentación y control</h2>
+            <ul class="mt-3 space-y-2 text-sm leading-relaxed text-stone">
+              <li>
+                <a class="text-clay underline-offset-4 hover:underline" href="/docs">Documentación automática</a>
+                generada del plano, con ejemplos y enlace a Swagger.
+              </li>
+              <li>
+                <a class="text-clay underline-offset-4 hover:underline" href="/api/plantillas">Plantillas</a>
+                de notas, inventario y reservas listas para clonar.
+              </li>
+              <li>Límite de registros, tamaño y retención configurables por API.</li>
+              <li>Modo solo lectura y autenticación simple por token, sin costo.</li>
+            </ul>
           </section>
 
           <section id="plano" class="rounded-[20px] border border-line p-5">
@@ -201,7 +323,8 @@
           </button>
         </div>
         <p class="mt-2 text-sm text-stone">
-          Todas viven bajo la misma dirección, cada una en su ruta. Ábrela para ver sus rutas disponibles.
+          Todas viven bajo la misma dirección, cada una en su ruta. Cada fila enlaza a su API, su documentación
+          y su documento OpenAPI.
         </p>
         <div id="lista" class="mt-4 divide-y divide-line border-y border-line"></div>
       </section>
@@ -224,12 +347,27 @@
             <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas</pre>
           </div>
           <div>
+            <p class="text-sm text-stone">Documentación y OpenAPI</p>
+            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas/openapi.json</pre>
+            <p class="mt-2 text-xs leading-relaxed text-stone">
+              O abre la vista con <a class="text-clay hover:underline" href="/docs?api=ejemplo-notas">/docs?api=ejemplo-notas</a>.
+            </p>
+          </div>
+          <div>
             <p class="text-sm text-stone">Guardar cambios necesita una clave</p>
             <p class="mt-2 text-xs leading-relaxed text-stone">
               Las lecturas funcionan siempre. Para crear, actualizar o borrar, pega la clave
               <code class="text-ivory">GITHUB_PAT</code> en Vercel: los datos se guardan como archivos dentro
-              de <code class="text-ivory">data/</code> en tu propio repositorio, sin base de datos de pago.
+              de <code class="text-ivory">data/</code> en tu propio repositorio, sin base de datos de pago. Si
+              generaste la API con token, añade <code class="text-ivory">Authorization: Bearer TU_TOKEN</code>.
             </p>
+          </div>
+          <div>
+            <p class="text-sm text-stone">Proteger una API con token</p>
+            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl -X POST https://TU-SITIO.vercel.app/api/mis-notas/notas \
+  -H "Authorization: Bearer TU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Una nota privada"}'</pre>
           </div>
         </div>
       </section>
@@ -240,6 +378,10 @@
         <p>Hecho con planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre.</p>
         <p>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/plantillas">/api/plantillas</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">/docs</a>
           ·
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">/api/salud</a>
           ·

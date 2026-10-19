@@ -10,13 +10,22 @@
 const crypto = require("crypto");
 const gh = require("../lib/github");
 const catalogo = require("../lib/catalogo");
+const plantillas = require("../lib/plantillas");
+const { normalizar: normalizarLimites } = require("../lib/limites");
+
+const TOKEN_HASH = /^[a-f0-9]{64}$/;
 
 function enviar(res, status, data) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader("Cache-Control", "no-store");
+  if (status === 204) {
+    res.end();
+    return;
+  }
   res.end(JSON.stringify(data));
 }
 
@@ -103,18 +112,39 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) {
+      enviar(res, 400, { error: "El pedido debe ser un objeto JSON." });
+      return;
+    }
+
     if (!secretoOk(entrada.secreto)) {
       enviar(res, 401, { error: "La clave del taller no coincide." });
       return;
     }
 
-    const descripcion = String(entrada.descripcion || "").trim();
     const propuesto = String(entrada.nombre || "").trim().toLowerCase();
     if (!nombreValido(propuesto)) {
-      enviar(res, 400, { error: "Elige un nombre claro: letras, números y guiones. De 2 a 48 caracteres." });
+      enviar(res, 400, {
+        error:
+          "Elige un nombre claro: letras minúsculas, números y guiones (2 a 48). Evita rutas internas como plantillas, docs, salud o generar.",
+      });
       return;
     }
-    if (descripcion.length < 20) {
+
+    // Una plantilla manda: su descripción es la fuente de verdad para que la
+    // huella que espera el navegador coincida con la que calcula Actions.
+    const clavePlantilla = String(entrada.plantilla || "").trim().toLowerCase();
+    const plantilla = clavePlantilla ? plantillas.buscar(clavePlantilla) : null;
+    if (clavePlantilla && !plantilla) {
+      enviar(res, 400, {
+        error: "Esa plantilla no existe.",
+        plantillas: plantillas.claves,
+      });
+      return;
+    }
+
+    const descripcion = plantilla ? String(plantilla.descripcion).trim() : String(entrada.descripcion || "").trim();
+    if (!plantilla && descripcion.length < 20) {
       enviar(res, 400, { error: "Cuéntame un poco más: tablas, campos y qué se puede hacer." });
       return;
     }
@@ -122,6 +152,44 @@ module.exports = async function handler(req, res) {
       enviar(res, 400, { error: "La descripción es demasiado larga. Recórtala un poco." });
       return;
     }
+
+    // Límites: si el navegador manda unos, se usan; si clona una plantilla y no
+    // manda nada, se conservan los de la plantilla. Todo se recorta a un rango seguro.
+    let limitesBruto = entrada.limites;
+    if (typeof limitesBruto === "string" && limitesBruto.trim()) {
+      try {
+        limitesBruto = JSON.parse(limitesBruto);
+      } catch {
+        enviar(res, 400, { error: "Los límites no son JSON válido." });
+        return;
+      }
+    }
+    const limites = limitesBruto
+      ? normalizarLimites(limitesBruto)
+      : plantilla && plantilla.spec.limites
+        ? normalizarLimites(plantilla.spec.limites)
+        : null;
+
+    let soloLectura = null;
+    if (entrada.soloLectura !== undefined && entrada.soloLectura !== null) {
+      soloLectura = [true, 1, "1", "true", "si", "sí", "yes"].includes(
+        typeof entrada.soloLectura === "string" ? entrada.soloLectura.trim().toLowerCase() : entrada.soloLectura
+      );
+    }
+
+    // Token: el navegador solo manda la huella SHA-256. Nunca el token en claro.
+    const tokenAccion = String(entrada.tokenAccion || "").trim().toLowerCase();
+    const tokenHash = String(entrada.tokenHash || "").trim().toLowerCase();
+    const accion = tokenAccion || (TOKEN_HASH.test(tokenHash) ? "poner" : "mantener");
+    if (!["poner", "quitar", "mantener"].includes(accion)) {
+      enviar(res, 400, { error: "Acción de token desconocida." });
+      return;
+    }
+    if (accion === "poner" && !TOKEN_HASH.test(tokenHash)) {
+      enviar(res, 400, { error: "La huella del token no es válida." });
+      return;
+    }
+    const tokenModo = String(entrada.tokenModo || "escritura").trim().toLowerCase() === "todo" ? "todo" : "escritura";
 
     try {
       await cupo();
@@ -137,6 +205,12 @@ module.exports = async function handler(req, res) {
       client_payload: {
         nombre: propuesto,
         descripcion: descripcion.slice(0, 8000),
+        plantilla: plantilla ? plantilla.clave : "",
+        soloLectura: soloLectura === null ? "" : soloLectura ? "1" : "0",
+        limites: limites ? JSON.stringify(limites) : "",
+        tokenAccion: accion,
+        tokenHash: accion === "poner" ? tokenHash : "",
+        tokenModo,
       },
     });
 
@@ -154,8 +228,14 @@ module.exports = async function handler(req, res) {
     enviar(res, 202, {
       ok: true,
       nombre: propuesto,
+      plantilla: plantilla ? plantilla.clave : null,
       actualiza: Boolean(catalogo.buscar(propuesto)),
-      mensaje: "Pedido enviado. Estoy creando la carpeta; en uno o dos minutos la dirección responderá.",
+      protegida: accion === "poner",
+      documentacion: "/docs?api=" + encodeURIComponent(propuesto),
+      openapi: "/api/" + propuesto + "/openapi.json",
+      mensaje: plantilla
+        ? "Pedido enviado. Estoy clonando la plantilla " + plantilla.clave + "; en uno o dos minutos responderá."
+        : "Pedido enviado. Estoy creando la carpeta; en uno o dos minutos la dirección responderá.",
     });
   } catch (error) {
     enviar(res, 500, { error: error.message || "No pude empezar la creación." });

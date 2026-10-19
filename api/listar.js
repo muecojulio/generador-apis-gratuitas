@@ -35,7 +35,13 @@ module.exports = function handler(req, res) {
       publicado: (fichas.get(api.nombre) || {}).publicado || null,
       actualizado: (fichas.get(api.nombre) || {}).actualizado || null,
     }));
-    enviar(res, 200, { total: apis.length, apis, taller: "/api/salud" });
+    enviar(res, 200, {
+      total: apis.length,
+      apis,
+      plantillas: "/api/plantillas",
+      documentacion: "/docs",
+      taller: "/api/salud",
+    });
   } catch (error) {
     enviar(res, 500, { error: error.message || "No pude leer el catálogo.", apis: [] });
   }

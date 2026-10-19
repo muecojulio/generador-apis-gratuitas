@@ -278,6 +278,9 @@ assert.ok(doc.paths["/api/tienda-barrio/productos"].get);
 assert.ok(doc.paths["/api/tienda-barrio/productos"].post);
 assert.ok(doc.paths["/api/tienda-barrio/productos/{id}"].put);
 assert.ok(doc.components.schemas.ProductosEntrada);
+assert.ok(doc.components.schemas.Productos.required.includes("nombre"), "el esquema de salida marca los campos obligatorios");
+assert.ok(doc.components.schemas.Productos.required.includes("id"));
+assert.equal(doc.components.schemas.ProductosEntradaParcial.required, undefined, "PUT no exige todos los campos");
 
 const specSolo = normalizar({ ...plano, soloLectura: true }, "solo-demo", "incluido");
 const docSolo = generarOpenapi(specSolo);

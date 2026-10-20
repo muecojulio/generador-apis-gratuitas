@@ -7,7 +7,6 @@
  */
 
 const catalogo = require("../lib/catalogo");
-const plantillas = require("../lib/plantillas");
 
 module.exports = function handler(req, res) {
   res.statusCode = 200;
@@ -20,11 +19,10 @@ module.exports = function handler(req, res) {
       ok: true,
       taller: "generador-apis-gratuitas",
       plan: "Vercel Hobby + GitHub Free (0 € para siempre)",
-      funciones: 7,
+      funciones: 6,
       apis: apis.length,
-      plantillas: plantillas.claves,
       documentacion: "/docs",
-      novedades: ["plantillas", "openapi", "limites", "token"],
+      novedades: ["openapi", "limites", "token"],
       claves: {
         GITHUB_PAT: Boolean(process.env.GITHUB_PAT),
         GENERADOR_SECRETO: Boolean(process.env.GENERADOR_SECRETO),

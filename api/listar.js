@@ -38,7 +38,6 @@ module.exports = function handler(req, res) {
     enviar(res, 200, {
       total: apis.length,
       apis,
-      plantillas: "/api/plantillas",
       documentacion: "/docs",
       taller: "/api/salud",
     });

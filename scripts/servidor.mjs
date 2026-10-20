@@ -105,7 +105,7 @@ const servidor = http.createServer(async (req, res) => {
   req.query = {};
   for (const [clave, valor] of url.searchParams.entries()) req.query[clave] = valor;
 
-  const fijos = new Set(["generar", "listar", "salud", "estado", "plantillas"]);
+  const fijos = new Set(["generar", "listar", "salud", "estado"]);
   let manejador;
   if (fijos.has(resto[0]) && resto.length === 1) {
     manejador = cargar("api/" + resto[0] + ".js");

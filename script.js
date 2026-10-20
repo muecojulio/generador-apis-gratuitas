@@ -14,8 +14,6 @@ const enviar = document.querySelector("#enviar");
 const plano = document.querySelector("#plano");
 const lista = document.querySelector("#lista");
 const resultado = document.querySelector("#resultado");
-const resultadoClon = document.querySelector("#resultado-clon");
-const plantillasLista = document.querySelector("#plantillas-lista");
 
 const soloLecturaInput = document.querySelector("#solo-lectura");
 const conTokenInput = document.querySelector("#con-token");
@@ -47,14 +45,10 @@ const MOTORES = {
   ovh: "OVHcloud AI (sin clave)",
   pollinations: "Pollinations (sin clave)",
   incluido: "lector del taller (sin IA)",
-  plantilla: "plantilla del taller",
 };
-
-const ajustes = { limites: false, soloLectura: false };
 
 function motorTexto(motor) {
   if (!motor) return "incluido";
-  if (String(motor).startsWith("plantilla")) return "plantilla del taller";
   return MOTORES[motor] || motor;
 }
 
@@ -68,7 +62,6 @@ const RESERVADOS = new Set([
   "index",
   "lib",
   "listar",
-  "plantillas",
   "public",
   "salud",
   "scripts",
@@ -276,151 +269,6 @@ async function cargarLista() {
   }
 }
 
-/* Plantillas ------------------------------------------------------------- */
-
-async function cargarPlantillas() {
-  let plantillas = [];
-  try {
-    const respuesta = await fetch("/api/plantillas", { cache: "no-store" });
-    if (respuesta.ok) {
-      const json = await respuesta.json();
-      plantillas = json.plantillas || [];
-    }
-  } catch {
-    plantillas = [];
-  }
-  vaciar(plantillasLista);
-  if (!plantillas.length) {
-    plantillasLista.appendChild(
-      texto("p", "No pude cargar las plantillas. Recarga la página o abre /api/plantillas.", "rounded-xl border border-line px-4 py-6 text-sm text-stone")
-    );
-    return;
-  }
-  for (const plantilla of plantillas) {
-    plantillasLista.appendChild(tarjetaPlantilla(plantilla));
-  }
-}
-
-function tarjetaPlantilla(plantilla) {
-  const tarjeta = document.createElement("article");
-  tarjeta.className = "flex flex-col rounded-[20px] border border-line bg-panel p-5";
-
-  tarjeta.appendChild(texto("h3", plantilla.titulo, "font-display text-2xl text-ivory"));
-  tarjeta.appendChild(texto("p", plantilla.resumen, "mt-1 text-sm leading-relaxed text-stone"));
-
-  const marcas = document.createElement("div");
-  marcas.className = "mt-3 flex flex-wrap gap-2";
-  marcas.appendChild(insignia(plantilla.recursos.length + " recurso" + (plantilla.recursos.length === 1 ? "" : "s")));
-  if (plantilla.soloLectura) marcas.appendChild(insignia("solo lectura", "border-amber-500/40 text-amber-300"));
-  tarjeta.appendChild(marcas);
-
-  const detalle = document.createElement("div");
-  detalle.className = "mt-3 space-y-1 border-t border-line pt-3";
-  for (const recurso of plantilla.recursos) {
-    detalle.appendChild(
-      texto(
-        "p",
-        recurso.titulo + " · " + recurso.campos.length + " campos",
-        "font-mono text-xs text-stone"
-      )
-    );
-  }
-  tarjeta.appendChild(detalle);
-  if (plantilla.limites) {
-    tarjeta.appendChild(texto("p", limitesResumen(plantilla.limites), "mt-2 text-xs text-stone"));
-  }
-
-  const etiqueta = document.createElement("label");
-  etiqueta.className = "mt-4 block text-xs uppercase tracking-wider text-stone";
-  etiqueta.textContent = "Clonar como";
-  const entrada = document.createElement("input");
-  entrada.type = "text";
-  entrada.maxLength = 48;
-  entrada.value = plantilla.sugerencia || "mis-" + plantilla.clave;
-  entrada.spellcheck = false;
-  entrada.className =
-    "mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 font-mono text-sm text-ivory placeholder:text-stone/70";
-  etiqueta.appendChild(entrada);
-  tarjeta.appendChild(etiqueta);
-
-  const clonar = document.createElement("button");
-  clonar.type = "button";
-  clonar.className =
-    "mt-3 flex min-h-10 w-full items-center justify-center rounded-xl bg-clay px-4 text-sm font-medium text-ink hover:bg-deep disabled:cursor-wait disabled:opacity-60";
-  clonar.textContent = "Clonar plantilla";
-  tarjeta.appendChild(clonar);
-
-  const aviso = texto("p", "", "mt-2 min-h-5 text-xs leading-relaxed text-stone");
-  aviso.setAttribute("role", "status");
-  aviso.setAttribute("aria-live", "polite");
-  tarjeta.appendChild(aviso);
-
-  clonar.addEventListener("click", async () => {
-    const nombre = slug(entrada.value) || plantilla.sugerencia;
-    if (!nombreValido(nombre)) {
-      aviso.textContent = "Ese nombre no vale: usa letras minúsculas, números y guiones (2 a 48) y evita rutas internas.";
-      return;
-    }
-    clonar.disabled = true;
-    entrada.disabled = true;
-    aviso.textContent = "Pidiendo la carpeta…";
-
-    let opciones;
-    try {
-      opciones = await opcionesDeFormulario(plantilla);
-    } catch (error) {
-      aviso.textContent = error.message;
-      clonar.disabled = false;
-      entrada.disabled = false;
-      return;
-    }
-
-    try {
-      const json = await pedirApi({
-        nombre,
-        descripcion: plantilla.descripcion,
-        secreto: secretoInput.value,
-        plantilla: plantilla.clave,
-        ...opciones.cuerpo,
-      });
-      aviso.textContent = "Clonando. En uno o dos minutos la API responde…";
-      mostrarResultado(
-        json.nombre || nombre,
-        { documentacion: json.documentacion, openapi: json.openapi, origen: "plantilla:" + plantilla.clave },
-        { token: opciones.token, plantilla: plantilla.clave, pendiente: true },
-        resultadoClon
-      );
-      const manifiesto = await esperarPublicacion(
-        json.nombre || nombre,
-        huella(String(plantilla.descripcion).trim()),
-        aviso
-      );
-      aviso.textContent = json.actualiza ? "API actualizada." : "Plantilla clonada.";
-      mostrarResultado(
-        json.nombre || nombre,
-        manifiesto,
-        { token: opciones.token, plantilla: plantilla.clave },
-        resultadoClon
-      );
-      await cargarLista();
-    } catch (error) {
-      aviso.textContent = error.message + " ";
-      if (error.enlace) {
-        aviso.appendChild(enlace("Ver", error.enlace, "text-clay underline-offset-4 hover:underline"));
-      }
-      if (error.ayuda) {
-        aviso.appendChild(document.createTextNode(" "));
-        aviso.appendChild(enlace("Cómo arreglarlo", error.ayuda, "text-clay underline-offset-4 hover:underline"));
-      }
-    } finally {
-      clonar.disabled = false;
-      entrada.disabled = false;
-    }
-  });
-
-  return tarjeta;
-}
-
 /* Opciones: solo lectura, límites y token -------------------------------- */
 
 function numeroCampo(entrada, defecto, minimo, maximo) {
@@ -455,12 +303,7 @@ async function sha256(textoPlano) {
   return Array.from(new Uint8Array(huellaBinaria), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function opcionesDeFormulario(plantilla) {
-  const limites =
-    plantilla && plantilla.limites && !ajustes.limites ? plantilla.limites : limitesDelFormulario();
-  const soloLectura =
-    plantilla && !ajustes.soloLectura ? Boolean(plantilla.soloLectura) : soloLecturaInput.checked;
-
+async function opcionesDeFormulario() {
   let token = "";
   let tokenHash = "";
   let tokenAccion = "quitar";
@@ -473,8 +316,8 @@ async function opcionesDeFormulario(plantilla) {
   return {
     token,
     cuerpo: {
-      soloLectura,
-      limites,
+      soloLectura: soloLecturaInput.checked,
+      limites: limitesDelFormulario(),
       tokenAccion,
       tokenHash,
       tokenModo: tokenModoInput.value === "todo" ? "todo" : "escritura",
@@ -499,7 +342,6 @@ async function pedirApi(payload) {
   if (!respuesta.ok) {
     const error = new Error(json.error || "No pude empezar.");
     error.ayuda = json.ayuda || "";
-    error.plantillas = json.plantillas || null;
     throw error;
   }
   return json;
@@ -507,8 +349,7 @@ async function pedirApi(payload) {
 
 /* Espera a que Vercel publique la API */
 
-async function esperarPublicacion(nombre, marca, nodoEstado) {
-  const salida = nodoEstado || estado;
+async function esperarPublicacion(nombre, marca) {
   const inicio = Date.now();
   let fallo = "";
   let avisoMotor = "";
@@ -527,10 +368,10 @@ async function esperarPublicacion(nombre, marca, nodoEstado) {
           break;
         }
         if (corrida && (corrida.estado === "queued" || corrida.estado === "in_progress")) {
-          salida.textContent = "La carpeta se está escribiendo en GitHub… (motor: " + (avisoMotor || "por decidir") + ")";
+          estado.textContent = "La carpeta se está escribiendo en GitHub… (motor: " + (avisoMotor || "por decidir") + ")";
         }
         if (json.publicada) {
-          salida.textContent = "Carpeta lista. Vercel está publicando la función…";
+          estado.textContent = "Carpeta lista. Vercel está publicando la función…";
         }
       }
     } catch {
@@ -561,8 +402,8 @@ async function esperarPublicacion(nombre, marca, nodoEstado) {
 
 /* Resultado con instrucciones listas para copiar */
 
-function mostrarResultado(nombre, manifiesto, extras, destino) {
-  const caja = destino || resultado;
+function mostrarResultado(nombre, manifiesto, extras) {
+  const caja = resultado;
   extras = extras || {};
   vaciar(caja);
   caja.className = "mt-5 rounded-xl border border-line bg-ink p-4";
@@ -574,9 +415,7 @@ function mostrarResultado(nombre, manifiesto, extras, destino) {
       "p",
       extras.pendiente
         ? "Publicando. Guarda el token que aparece abajo."
-        : extras.plantilla
-          ? "¡Lista! Clonaste la plantilla."
-          : "¡Lista! Tu API ya responde.",
+        : "¡Lista! Tu API ya responde.",
       "font-medium text-ivory"
     )
   );
@@ -693,7 +532,7 @@ forma.addEventListener("submit", async (evento) => {
     return;
   }
   if (!nombreValido(nombre)) {
-    estado.textContent = "Ese nombre no vale: usa letras minúsculas, números y guiones (2 a 48) y evita rutas internas como plantillas o docs.";
+    estado.textContent = "Ese nombre no vale: usa letras minúsculas, números y guiones (2 a 48) y evita rutas internas como docs o generar.";
     return;
   }
 
@@ -702,7 +541,7 @@ forma.addEventListener("submit", async (evento) => {
 
   let opciones;
   try {
-    opciones = await opcionesDeFormulario(null);
+    opciones = await opcionesDeFormulario();
   } catch (error) {
     estado.textContent = error.message;
     enviar.disabled = false;
@@ -751,19 +590,10 @@ document.querySelector("#recargar").addEventListener("click", cargarLista);
 nombreInput.addEventListener("input", refrescarMeta);
 descripcionInput.addEventListener("input", refrescarMeta);
 
-soloLecturaInput.addEventListener("change", () => {
-  ajustes.soloLectura = true;
-});
 conTokenInput.addEventListener("change", () => {
   tokenModoInput.disabled = !conTokenInput.checked;
 });
-for (const campo of [maxRegistrosInput, retencionInput, maxKbInput]) {
-  campo.addEventListener("input", () => {
-    ajustes.limites = true;
-  });
-}
 tokenModoInput.disabled = !conTokenInput.checked;
 
 refrescarMeta();
 cargarLista();
-cargarPlantillas();

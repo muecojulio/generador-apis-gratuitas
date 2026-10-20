@@ -3,16 +3,22 @@
  * Pruebas del taller. Se ejecutan solas antes de crear una API y también de
  * forma manual con:  node scripts/probar.mjs
  *
- * Comprueban cuatro cosas:
+ * Comprueban:
  *  1. El lector (lib/motor.mjs) entiende descripciones claras y rechaza nombres feos.
  *  2. El motor (lib/runtime.js) hace bien el CRUD, con sus validaciones.
  *  3. La entrada de todas las APIs (lib/entrada.js) encuentra cada plano.
  *  4. El registro (lib/registro.js) está al día respecto a las carpetas api/.
+ *  5. OpenAPI, límites, retención y token respetan el plano.
+ *  6. El botón valida y envía el pedido por descripción a GitHub.
+ *  7. El catálogo y la salud solo anuncian funciones disponibles.
+ *  8. La generación local crea y actualiza una API sin llamar a la red.
  */
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
+import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import {
   analizar,
@@ -29,7 +35,6 @@ const { crear } = require("../lib/runtime.js");
 const { hash: hashToken } = require("../lib/auth.js");
 const limitesMod = require("../lib/limites.js");
 const { generar: generarOpenapi } = require("../lib/openapi.js");
-const plantillas = require("../lib/plantillas.js");
 
 const RAIZ = path.resolve(new URL("..", import.meta.url).pathname);
 
@@ -61,6 +66,7 @@ assert.equal(precio.min, 0);
 assert.equal(slugValido("generar"), false, "«generar» es una ruta interna y no se puede usar");
 assert.equal(slugValido("estado"), false, "«estado» es una ruta interna y no se puede usar");
 assert.equal(slugValido("tienda-barrio"), true);
+assert.equal(slugValido("plantillas"), true, "el antiguo nombre de la ruta ya está disponible");
 assert.equal(slugValido("Tienda Barrio"), false);
 
 // Un plano de IA con basura alrededor se limpia igual.
@@ -237,19 +243,7 @@ for (const nombre of registradas) {
   assert.ok(Array.isArray(spec.recursos) && spec.recursos.length >= 1, nombre + " necesita al menos un recurso");
 }
 
-/* 5. Plantillas, OpenAPI, límites y token -------------------------------- */
-
-assert.deepEqual(plantillas.claves.slice().sort(), ["inventario", "notas", "reservas"]);
-assert.equal(plantillas.buscar("no-existe"), null);
-for (const clave of plantillas.claves) {
-  const ficha = plantillas.buscar(clave);
-  const copia = plantillas.specDe(clave, "mi-" + clave);
-  assert.ok(ficha.descripcion.length >= 20, clave + " necesita descripción");
-  assert.equal(copia.nombre, "mi-" + clave);
-  assert.equal(copia.motor, "plantilla");
-  assert.ok(copia.recursos.length >= 1, clave + " necesita recursos");
-  assert.ok(copia.limites && copia.limites.maxRegistrosPorRecurso >= 1, clave + " necesita límites");
-}
+/* 5. OpenAPI, límites y token ------------------------------------------- */
 
 // Los límites se recortan a rangos seguros y el lector entiende los del texto.
 assert.deepEqual(normalizarLimites(), LIMITES_POR_DEFECTO);
@@ -416,30 +410,6 @@ assert.equal((await nuevo.json()).status, 201);
 assert.equal(almacenRetencion.estado().recursos.notas.length, 1);
 assert.equal(almacenRetencion.estado().recursos.notas[0].texto, "nuevo");
 
-// GET /api/plantillas entrega las tres fichas sin depender de GitHub.
-const handlerPlantillas = require("../api/plantillas.js");
-let estadoPlantillas = 0;
-let cuerpoPlantillas = "";
-const resPlantillas = {
-  setHeader() {},
-  end(datos) {
-    cuerpoPlantillas = datos || "";
-  },
-};
-Object.defineProperty(resPlantillas, "statusCode", {
-  set(valor) {
-    estadoPlantillas = valor;
-  },
-  get() {
-    return estadoPlantillas;
-  },
-});
-handlerPlantillas({ method: "GET", headers: {} }, resPlantillas);
-const jsonPlantillas = JSON.parse(cuerpoPlantillas);
-assert.equal(estadoPlantillas, 200);
-assert.equal(jsonPlantillas.total, 3);
-assert.ok(jsonPlantillas.plantillas.some((item) => item.clave === "reservas"));
-
 /* 6. El botón arma el pedido correcto (sin llamar a GitHub de verdad) ------- */
 
 const gh = require("../lib/github.js");
@@ -499,8 +469,8 @@ try {
       method: "POST",
       headers: {},
       body: {
-        nombre: "clon-demo",
-        plantilla: "notas",
+        nombre: "pedido-demo",
+        descripcion: "  " + descripcion + "  ",
         limites: { maxRegistrosPorRecurso: 42, retencionDias: 7 },
         soloLectura: true,
         tokenAccion: "poner",
@@ -512,11 +482,17 @@ try {
   );
   const salida = pedido.json();
   assert.equal(salida.status, 202);
-  assert.equal(salida.cuerpo.plantilla, "notas");
+  assert.equal(salida.cuerpo.nombre, "pedido-demo");
+  assert.equal(salida.cuerpo.documentacion, "/docs?api=pedido-demo");
+  assert.equal(salida.cuerpo.openapi, "/api/pedido-demo/openapi.json");
+  assert.equal(Object.hasOwn(salida.cuerpo, "plantilla"), false);
   assert.equal(salida.cuerpo.protegida, true);
   const despacho = llamadas.find((llamada) => llamada.ruta.endsWith("/dispatches"));
   assert.ok(despacho, "debe disparar el workflow");
-  assert.equal(despacho.cuerpo.client_payload.plantilla, "notas");
+  assert.equal(despacho.cuerpo.event_type, "generar-api");
+  assert.equal(despacho.cuerpo.client_payload.nombre, "pedido-demo");
+  assert.equal(despacho.cuerpo.client_payload.descripcion, descripcion);
+  assert.equal(Object.hasOwn(despacho.cuerpo.client_payload, "plantilla"), false);
   assert.equal(despacho.cuerpo.client_payload.soloLectura, "1");
   assert.equal(despacho.cuerpo.client_payload.tokenHash, tokenHash);
   assert.equal(despacho.cuerpo.client_payload.tokenModo, "todo");
@@ -526,9 +502,37 @@ try {
     retencionDias: 7,
   });
 
+  // Sin ajustes explícitos, Actions debe poder conservar los de la API existente.
+  const regeneracion = respuestaJson();
+  await handlerGenerar(
+    { method: "POST", headers: {}, body: { nombre: "ejemplo-notas", descripcion } },
+    regeneracion.res
+  );
+  assert.equal(regeneracion.json().status, 202);
+  assert.equal(regeneracion.json().cuerpo.actualiza, true);
+  const sinAjustes = llamadas.at(-1).cuerpo.client_payload;
+  assert.equal(sinAjustes.limites, "");
+  assert.equal(sinAjustes.soloLectura, "");
+  assert.equal(sinAjustes.tokenAccion, "mantener");
+  assert.equal(sinAjustes.tokenHash, "");
+
+  // La descripción siempre es obligatoria, incluso en pedidos del cliente antiguo.
+  for (const body of [
+    { nombre: "sin-descripcion" },
+    { nombre: "descripcion-corta", descripcion: "Tabla notas." },
+    { nombre: "pedido-antiguo", plantilla: "notas" },
+    { nombre: "descripcion-larga", descripcion: "x".repeat(8001) },
+  ]) {
+    const rechazado = respuestaJson();
+    const antes = llamadas.length;
+    await handlerGenerar({ method: "POST", headers: {}, body }, rechazado.res);
+    assert.equal(rechazado.json().status, 400, body.nombre + " debe rechazarse");
+    assert.equal(llamadas.length, antes, "una descripción inválida no debe llamar a GitHub");
+  }
+
   const reservado = respuestaJson();
   await handlerGenerar(
-    { method: "POST", headers: {}, body: { nombre: "plantillas", descripcion: "Tabla pruebas con campos titulo." } },
+    { method: "POST", headers: {}, body: { nombre: "docs", descripcion: "Tabla pruebas con campos titulo." } },
     reservado.res
   );
   assert.equal(reservado.json().status, 400, "no se puede crear una API con un nombre interno");
@@ -551,4 +555,80 @@ try {
   else process.env.GENERADOR_SECRETO = entornoOriginal.GENERADOR_SECRETO;
 }
 
-console.log("Pruebas ok: lector, motor, entrada, registro, plantillas, OpenAPI, límites y token (" + registradas.length + " API(s)).");
+/* 7. Catálogo y salud sin anunciar funciones retiradas -------------------- */
+
+const listadoPublico = respuestaJson();
+require("../api/listar.js")({ method: "GET" }, listadoPublico.res);
+assert.equal(listadoPublico.json().status, 200);
+assert.equal(listadoPublico.json().cuerpo.total, registradas.length);
+assert.equal(listadoPublico.json().cuerpo.documentacion, "/docs");
+assert.equal(Object.hasOwn(listadoPublico.json().cuerpo, "plantillas"), false);
+
+const salud = respuestaJson();
+require("../api/salud.js")({ method: "GET" }, salud.res);
+assert.equal(salud.json().status, 200);
+assert.equal(salud.json().cuerpo.funciones, 6);
+assert.equal(salud.json().cuerpo.apis, registradas.length);
+assert.equal(Object.hasOwn(salud.json().cuerpo, "plantillas"), false);
+assert.deepEqual(salud.json().cuerpo.novedades, ["openapi", "limites", "token"]);
+
+/* 8. Generación local por descripción, sin red ni cambios en el repositorio */
+
+const temporal = fs.mkdtempSync(path.join(os.tmpdir(), "taller-descripcion-"));
+try {
+  const entorno = {
+    ...process.env,
+    GENERADOR_SIN_IA: "1",
+    NOMBRE: "prueba-descripcion",
+    DESCRIPCION: "",
+    PLANTILLA: "notas", // Una variable antigua ya no permite saltarse la descripción.
+    SOLO_LECTURA: "1",
+    LIMITES: JSON.stringify({ maxRegistrosPorRecurso: 42, retencionDias: 7 }),
+    TOKEN_ACCION: "poner",
+    TOKEN_HASH: "c".repeat(64),
+    TOKEN_MODO: "todo",
+  };
+  const disenar = (env) => spawnSync(process.execPath, [path.join(RAIZ, "scripts/disenar.mjs")], {
+    cwd: temporal,
+    env,
+    encoding: "utf8",
+    timeout: 15000,
+  });
+  const sinDescripcion = disenar(entorno);
+  assert.equal(sinDescripcion.status, 1);
+  assert.match(sinDescripcion.stderr, /descripción es demasiado corta/);
+  const archivoSpec = path.join(temporal, "api/prueba-descripcion/spec.json");
+  assert.equal(fs.existsSync(archivoSpec), false, "no debe crear nada sin descripción");
+
+  const conDescripcion = disenar({ ...entorno, DESCRIPCION: descripcion });
+  assert.equal(conDescripcion.status, 0, conDescripcion.stderr);
+  const generado = JSON.parse(fs.readFileSync(archivoSpec, "utf8"));
+  assert.equal(generado.motor, "incluido");
+  assert.equal(generado.huella, huella(descripcion));
+  assert.ok(generado.recursos.some((recurso) => recurso.nombre === "productos"));
+  assert.equal(generado.soloLectura, true);
+  assert.deepEqual(generado.limites, { maxRegistrosPorRecurso: 42, maxBytes: 262144, retencionDias: 7 });
+  assert.deepEqual(generado.auth, { tipo: "token", hash: entorno.TOKEN_HASH, modo: "todo" });
+  assert.ok(fs.readFileSync(path.join(temporal, "lib/registro.js"), "utf8").includes("prueba-descripcion/spec.json"));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(temporal, "catalogo.json"), "utf8")).apis[0].nombre, generado.nombre);
+
+  const nuevaDescripcion = descripcion + "\nEl nombre es obligatorio.";
+  const regenerada = disenar({
+    ...entorno,
+    DESCRIPCION: nuevaDescripcion,
+    SOLO_LECTURA: "",
+    LIMITES: "",
+    TOKEN_ACCION: "",
+    TOKEN_HASH: "",
+  });
+  assert.equal(regenerada.status, 0, regenerada.stderr);
+  const actualizado = JSON.parse(fs.readFileSync(archivoSpec, "utf8"));
+  assert.equal(actualizado.huella, huella(nuevaDescripcion));
+  assert.equal(actualizado.soloLectura, generado.soloLectura);
+  assert.deepEqual(actualizado.limites, generado.limites);
+  assert.deepEqual(actualizado.auth, generado.auth);
+} finally {
+  fs.rmSync(temporal, { recursive: true, force: true });
+}
+
+console.log("Pruebas ok: lector, motor, entrada, registro, generación, OpenAPI, límites y token (" + registradas.length + " API(s)).");

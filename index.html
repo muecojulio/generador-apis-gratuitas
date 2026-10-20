@@ -56,7 +56,6 @@
         <span class="font-display text-xl tracking-tight">Taller</span>
       </a>
       <nav class="flex flex-wrap items-center gap-4 text-sm text-stone">
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#plantillas">Plantillas</a>
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">Documentación</a>
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="#como-funciona">Cómo funciona</a>
         <a
@@ -90,26 +89,6 @@
         <span class="rounded-full border border-line px-3 py-1">Límites por API</span>
         <span class="rounded-full border border-line px-3 py-1">Datos en tu propio repositorio</span>
       </div>
-
-      <section id="plantillas" class="mt-12">
-        <div class="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">Atajos</p>
-            <h2 class="mt-2 font-display text-3xl">Plantillas listas para clonar</h2>
-          </div>
-          <a href="/docs" class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline"
-            >Ver documentación →</a
-          >
-        </div>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-stone">
-          Notas, inventario y reservas ya tienen tablas, campos, ejemplos y límites pensados. Ponles un nombre y
-          pulsa <span class="text-ivory">Clonar</span>: no hace falta describir nada ni esperar a la IA.
-        </p>
-        <div id="plantillas-lista" class="mt-4 grid gap-4 md:grid-cols-3">
-          <p class="rounded-xl border border-line px-4 py-6 text-sm text-stone">Cargando plantillas…</p>
-        </div>
-        <div id="resultado-clon" class="hidden"></div>
-      </section>
 
       <div class="mt-10 grid gap-6 lg:grid-cols-5">
         <form id="forma" class="rounded-[20px] border border-line bg-panel p-5 sm:p-6 lg:col-span-3">
@@ -213,9 +192,8 @@
             </div>
             <p class="mt-3 text-xs leading-relaxed">
               El token se muestra una sola vez al terminar; guárdalo. Si vuelves a generar una API protegida
-              sin marcar la casilla, se le quita la protección. Las plantillas ya traen sus propios límites:
-              estos campos se usan al describir una API desde cero o cuando los cambias antes de clonar. El
-              tamaño del archivo de datos no puede pasar de 512 KB.
+              sin marcar la casilla, se le quita la protección. Puedes ajustar los límites de registros,
+              tamaño y retención en estos campos. El archivo de datos no puede pasar de 512 KB.
             </p>
           </details>
 
@@ -279,10 +257,6 @@
               <li>
                 <a class="text-clay underline-offset-4 hover:underline" href="/docs">Documentación automática</a>
                 generada del plano, con ejemplos y enlace a Swagger.
-              </li>
-              <li>
-                <a class="text-clay underline-offset-4 hover:underline" href="/api/plantillas">Plantillas</a>
-                de notas, inventario y reservas listas para clonar.
               </li>
               <li>Límite de registros, tamaño y retención configurables por API.</li>
               <li>Modo solo lectura y autenticación simple por token, sin costo.</li>
@@ -378,8 +352,6 @@
         <p>Hecho con planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre.</p>
         <p>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
-          ·
-          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/plantillas">/api/plantillas</a>
           ·
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">/docs</a>
           ·

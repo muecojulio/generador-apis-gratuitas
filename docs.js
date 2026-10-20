@@ -145,7 +145,7 @@ function renderIndice() {
         h(
           "p",
           { class: "mt-2 max-w-xl text-sm leading-relaxed text-stone" },
-          "Escribe una descripción o clona una plantilla en la página principal. En uno o dos minutos aparecerá aquí su documentación."
+          "Escribe una descripción en la página principal. En uno o dos minutos aparecerá aquí su documentación."
         ),
         h(
           "a",

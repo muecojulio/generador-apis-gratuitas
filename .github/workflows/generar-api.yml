@@ -23,19 +23,13 @@ on:
         required: true
         type: string
       descripcion:
-        description: "Describe tablas, campos y acciones (vacío si usas plantilla)"
-        required: false
-        default: ""
+        description: "Describe tablas, campos y acciones"
+        required: true
         type: string
       proveedor:
         description: "Motor de IA: auto, gemini, llm7, kilo, ovh, pollinations o incluido"
         required: false
         default: auto
-        type: string
-      plantilla:
-        description: "Clonar plantilla: notas, inventario o reservas (vacío = usar descripción)"
-        required: false
-        default: ""
         type: string
       solo_lectura:
         description: "¿Solo lectura? si o no"
@@ -69,19 +63,13 @@ on:
         required: true
         type: string
       descripcion:
-        description: "Describe tablas, campos y acciones (vacío si usas plantilla)"
-        required: false
-        default: ""
+        description: "Describe tablas, campos y acciones"
+        required: true
         type: string
       proveedor:
         description: "Motor de IA (opcional): auto, gemini, llm7, kilo, ovh, pollinations o incluido"
         required: false
         default: auto
-        type: string
-      plantilla:
-        description: "Clonar plantilla: notas, inventario o reservas (vacío = usar descripción)"
-        required: false
-        default: ""
         type: string
       solo_lectura:
         description: "¿Solo lectura? si o no"
@@ -127,7 +115,6 @@ jobs:
       NOMBRE: ${{ github.event.client_payload.nombre || inputs.nombre }}
       DESCRIPCION: ${{ github.event.client_payload.descripcion || inputs.descripcion }}
       PROVEEDOR: ${{ inputs.proveedor || 'auto' }}
-      PLANTILLA: ${{ github.event.client_payload.plantilla || inputs.plantilla || '' }}
       SOLO_LECTURA: ${{ github.event.client_payload.soloLectura || inputs.solo_lectura || '' }}
       LIMITES: ${{ github.event.client_payload.limites || inputs.limites || '' }}
       TOKEN_ACCION: ${{ github.event.client_payload.tokenAccion || inputs.token_accion || '' }}

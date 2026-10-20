@@ -10,7 +10,6 @@
 const crypto = require("crypto");
 const gh = require("../lib/github");
 const catalogo = require("../lib/catalogo");
-const plantillas = require("../lib/plantillas");
 const { normalizar: normalizarLimites } = require("../lib/limites");
 
 const TOKEN_HASH = /^[a-f0-9]{64}$/;
@@ -126,25 +125,13 @@ module.exports = async function handler(req, res) {
     if (!nombreValido(propuesto)) {
       enviar(res, 400, {
         error:
-          "Elige un nombre claro: letras minúsculas, números y guiones (2 a 48). Evita rutas internas como plantillas, docs, salud o generar.",
+          "Elige un nombre claro: letras minúsculas, números y guiones (2 a 48). Evita rutas internas como docs, salud o generar.",
       });
       return;
     }
 
-    // Una plantilla manda: su descripción es la fuente de verdad para que la
-    // huella que espera el navegador coincida con la que calcula Actions.
-    const clavePlantilla = String(entrada.plantilla || "").trim().toLowerCase();
-    const plantilla = clavePlantilla ? plantillas.buscar(clavePlantilla) : null;
-    if (clavePlantilla && !plantilla) {
-      enviar(res, 400, {
-        error: "Esa plantilla no existe.",
-        plantillas: plantillas.claves,
-      });
-      return;
-    }
-
-    const descripcion = plantilla ? String(plantilla.descripcion).trim() : String(entrada.descripcion || "").trim();
-    if (!plantilla && descripcion.length < 20) {
+    const descripcion = String(entrada.descripcion || "").trim();
+    if (descripcion.length < 20) {
       enviar(res, 400, { error: "Cuéntame un poco más: tablas, campos y qué se puede hacer." });
       return;
     }
@@ -153,8 +140,8 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    // Límites: si el navegador manda unos, se usan; si clona una plantilla y no
-    // manda nada, se conservan los de la plantilla. Todo se recorta a un rango seguro.
+    // Los límites recibidos se recortan a un rango seguro. Si se omiten, el
+    // diseñador conserva los anteriores o usa los valores del nuevo plano.
     let limitesBruto = entrada.limites;
     if (typeof limitesBruto === "string" && limitesBruto.trim()) {
       try {
@@ -164,11 +151,7 @@ module.exports = async function handler(req, res) {
         return;
       }
     }
-    const limites = limitesBruto
-      ? normalizarLimites(limitesBruto)
-      : plantilla && plantilla.spec.limites
-        ? normalizarLimites(plantilla.spec.limites)
-        : null;
+    const limites = limitesBruto ? normalizarLimites(limitesBruto) : null;
 
     let soloLectura = null;
     if (entrada.soloLectura !== undefined && entrada.soloLectura !== null) {
@@ -205,7 +188,6 @@ module.exports = async function handler(req, res) {
       client_payload: {
         nombre: propuesto,
         descripcion: descripcion.slice(0, 8000),
-        plantilla: plantilla ? plantilla.clave : "",
         soloLectura: soloLectura === null ? "" : soloLectura ? "1" : "0",
         limites: limites ? JSON.stringify(limites) : "",
         tokenAccion: accion,
@@ -228,14 +210,11 @@ module.exports = async function handler(req, res) {
     enviar(res, 202, {
       ok: true,
       nombre: propuesto,
-      plantilla: plantilla ? plantilla.clave : null,
       actualiza: Boolean(catalogo.buscar(propuesto)),
       protegida: accion === "poner",
       documentacion: "/docs?api=" + encodeURIComponent(propuesto),
       openapi: "/api/" + propuesto + "/openapi.json",
-      mensaje: plantilla
-        ? "Pedido enviado. Estoy clonando la plantilla " + plantilla.clave + "; en uno o dos minutos responderá."
-        : "Pedido enviado. Estoy creando la carpeta; en uno o dos minutos la dirección responderá.",
+      mensaje: "Pedido enviado. Estoy creando la carpeta; en uno o dos minutos la dirección responderá.",
     });
   } catch (error) {
     enviar(res, 500, { error: error.message || "No pude empezar la creación." });

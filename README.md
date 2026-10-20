@@ -7,9 +7,8 @@ dentro de `api/` y queda viva en una dirección como `https://TU-SITIO.vercel.ap
 **Coste: 0 €, para siempre.** GitHub Free + Vercel Hobby + modelos de IA de acceso libre. Ni tarjetas, ni
 claves de pago, ni servicios comerciales de OpenAI.
 
-Además, cada API nace ahora con:
+Además, cada API incluye:
 
-- **Plantillas comunes** de notas, inventario y reservas, listas para clonar sin describir nada.
 - **Documentación automática OpenAPI 3.0.3** en `/api/<nombre>/openapi.json` y una vista legible en
   `/docs?api=<nombre>`.
 - **Límite de registros, tamaño y retención de datos configurable** por API.
@@ -17,29 +16,9 @@ Además, cada API nace ahora con:
 
 ---
 
-## Las cuatro novedades, en corto
+## Qué incluye cada API
 
-### 1. Plantillas listas para clonar
-
-La sección **Plantillas** de la página principal muestra tres planos ya escritos. Pulsa **Clonar plantilla**,
-elige un nombre y listo: no hace falta IA ni esperar a que un modelo responda.
-
-| Clave | Recursos | Límites de fábrica |
-| --- | --- | --- |
-| `notas` | notas | 500 registros · 90 días de retención |
-| `inventario` | productos, movimientos | 1.000 registros · sin borrado automático |
-| `reservas` | reservas, mesas | 500 registros · 365 días de retención |
-
-También se pueden clonar desde la terminal (sin tocar la nube):
-
-```bash
-PLANTILLA=notas NOMBRE=mis-notas npm run disenar
-```
-
-Las plantillas son **datos puros** en `plantillas/*.json`. No traen código. Al clonar, el taller escribe
-`api/<nombre>/spec.json`, actualiza el registro y publica la API, igual que cuando la diseña la IA.
-
-### 2. Documentación automática (OpenAPI / Swagger)
+### 1. Documentación automática (OpenAPI / Swagger)
 
 Cada API publica su documento generado desde el plano:
 
@@ -58,7 +37,7 @@ El documento se genera en `lib/openapi.js` a partir del plano, no se escribe a m
 los límites y los esquemas de seguridad `bearerAuth` y `apiToken` cuando la API pide token. Desde la vista se
 puede abrir el mismo JSON en **Swagger Editor** con un clic.
 
-### 3. Límites y retención por API
+### 2. Límites y retención por API
 
 Cada plano puede guardar un bloque `limites`:
 
@@ -84,7 +63,7 @@ Las respuestas informan con `X-Limite-Registros`, `X-Retencion-Dias` y `X-Total-
 cuando aplican). El límite real es el tamaño del archivo `data/<api>.json` con formato legible, no el tamaño
 del cuerpo de una petición; el cuerpo además tiene un tope de 1 MB.
 
-### 4. Solo lectura y token opcional
+### 3. Solo lectura y token opcional
 
 **Solo lectura.** La API solo publica rutas `GET`; cualquier intento de escribir responde `405`. La
 documentación también lo refleja (no aparecen rutas de escritura).
@@ -130,10 +109,8 @@ api/
   generar.js               -> el botón de la página
   estado.js                -> ¿cómo va la creación?
   listar.js                -> catálogo de APIs publicadas
-  plantillas.js            -> plantillas listas para clonar
   salud.js                 -> comprobación rápida
 lib/                       -> motor, lector, IA gratuita, OpenAPI, token y límites
-plantillas/                -> notas.json, inventario.json, reservas.json (datos puros)
 scripts/                   -> generación, pruebas y servidor local
 data/                      -> los datos que guardan las APIs creadas
 docs.html / docs.js        -> vista de documentación (estática, sin función de Vercel)
@@ -143,11 +120,10 @@ Tres detalles importantes, explicados sin tecnicismos:
 
 1. **Dos archivos dinámicos atienden todas las APIs.** El plan Hobby de Vercel solo admite 12 funciones por
    despliegue; si cada API creada añadiera sus propios archivos, el sitio se rompería a la quinta o sexta.
-   Con el reparto dinámico y la nueva función `/api/plantillas`, el taller usa **7 funciones** y puede
-   sostener muchísimas APIs.
+   Con el reparto dinámico, el taller usa **6 funciones** y puede sostener muchísimas APIs.
 2. **La IA no escribe el programa.** El modelo solo devuelve un *plano* en JSON (tablas, campos, reglas,
    límites). Quien atiende las peticiones es siempre `lib/runtime.js`, código fijo y revisado. Una
-   descripción maliciosa no puede colar código en tu servidor. Las plantillas también son datos.
+   descripción maliciosa no puede colar código en tu servidor.
 3. **OpenAPI, token y límites salen del mismo plano.** `lib/openapi.js` genera el documento; `lib/auth.js` y
    `lib/limites.js` aplican las reglas. No hay configuración duplicada ni servicios externos.
 
@@ -156,10 +132,9 @@ Tres detalles importantes, explicados sin tecnicismos:
 ## Uso diario
 
 1. Abre tu sitio en Vercel.
-2. Escribe el nombre de la ruta (por ejemplo `tienda-barrio`) y la descripción, **o** pulsa **Clonar** en una
-   plantilla.
+2. Escribe el nombre de la ruta (por ejemplo `tienda-barrio`) y la descripción de tablas, campos y acciones.
 3. Ajusta si quieres: solo lectura, token, registros, tamaño o retención.
-4. Pulsa **Generar API en la nube** (o **Clonar plantilla**).
+4. Pulsa **Generar API en la nube**.
 5. En uno o dos minutos, `/api/tienda-barrio` responde.
 
 Ya hay tres APIs de ejemplo listas para probar: `/api/ejemplo-notas` (la del taller), `/api/demo-recetas`
@@ -191,12 +166,12 @@ curl -X POST https://TU-SITIO.vercel.app/api/generar \
   -H "Content-Type: application/json" \
   -d '{
     "nombre": "mi-inventario",
-    "plantilla": "inventario",
+    "descripcion": "Tabla productos con campos nombre (texto, obligatorio), precio (número, mínimo 0) y existencias (entero). Quiero listar, crear, actualizar y borrar.",
     "limites": {"maxRegistrosPorRecurso": 800, "retencionDias": 0}
   }'
 ```
 
-La respuesta es `202` con la dirección de la documentación. Si usas `plantilla`, no hace falta `descripcion`.
+La respuesta es `202` con la dirección de la documentación. La descripción es obligatoria (20–8.000 caracteres).
 
 ---
 
@@ -216,7 +191,7 @@ Comprueba el despliegue con:
 
 ```bash
 curl https://TU-SITIO.vercel.app/api/salud
-curl https://TU-SITIO.vercel.app/api/plantillas
+curl https://TU-SITIO.vercel.app/api/listar
 curl https://TU-SITIO.vercel.app/docs?api=ejemplo-notas
 ```
 
@@ -291,8 +266,6 @@ están lentos), el taller **no se rompe**: usa el lector incluido, que entiende 
 tablas, campos y reglas sin internet y sin ninguna clave. El lector también entiende límites escritos en
 lenguaje natural («máximo 200 registros», «retención de 30 días», «hasta 64 KB»).
 
-**Las plantillas no usan IA en absoluto.** Son planos ya revisados que se copian y se normalizan.
-
 ### Comprobado el 14 de octubre de 2026 (sin ninguna clave)
 
 | Proveedor | ¿Respondió? | Tiempo | Plano que devolvió |
@@ -313,7 +286,7 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
 
 ## Límites que conviene conocer (y que el taller respeta)
 
-- **Vercel Hobby**: 12 funciones por despliegue (usamos 7), 100 despliegues al día, ancho de banda generoso.
+- **Vercel Hobby**: 12 funciones por despliegue (usamos 6), 100 despliegues al día, ancho de banda generoso.
   Suficiente de sobra para un taller.
 - **GitHub Actions**: minutos ilimitados en repositorios públicos. Cada generación tarda ~1 minuto.
 - **Cupo amable**: una creación a la vez y 12 por hora, para que el taller no se descontrole.
@@ -338,9 +311,9 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
 ## Trabajar en tu computadora
 
 ```bash
-npm test          # pruebas del lector, motor, registro, plantillas, OpenAPI, límites y token
+npm test          # pruebas del lector, motor, registro, generación, OpenAPI, límites y token
 npm run local     # servidor local en http://localhost:3000
-npm run disenar   # crea una API desde NOMBRE + DESCRIPCION o desde PLANTILLA
+npm run disenar   # crea una API desde NOMBRE + DESCRIPCION
 npm run registrar # rehace lib/registro.js tras tocar api/<nombre>/spec.json
 npm run proveedores # prueba los modelos gratuitos
 ```
@@ -356,11 +329,12 @@ DESCRIPCION="Tabla tareas con campos titulo (texto, obligatorio) y hecha (si o n
 npm run disenar
 ```
 
-Para clonar una plantilla y añadirle token desde la terminal:
+Para generar una API con token desde la terminal:
 
 ```bash
 TOKEN=taller_mi_token_de_prueba
-PLANTILLA=notas NOMBRE=mis-notas \
+GENERADOR_SIN_IA=1 NOMBRE=mis-notas \
+DESCRIPCION="Tabla notas con campos titulo (texto, obligatorio) y cuerpo (texto)." \
 TOKEN_ACCION=poner \
 TOKEN_HASH=$(printf '%s' "$TOKEN" | sha256sum | cut -d' ' -f1) \
 TOKEN_MODO=escritura \
@@ -384,7 +358,6 @@ npm run disenar
 | Guardar devuelve 405 | La API está en modo solo lectura. |
 | Perdí el token | Vuelve a generar la API con **Token opcional** marcado. El token viejo deja de funcionar. También puedes definir `API_TOKEN_<NOMBRE>` en Vercel. |
 | `/docs` da 404 en Vercel | Comprueba que el despliegue incluye `docs.html` y `docs.js`, y que `cleanUrls` está activo. |
-| No cargan las plantillas | Abre `/api/plantillas`; debe devolver tres fichas. |
 | Quiero volver a generar una API | Usa el mismo nombre: el taller actualiza su plano y conserva los datos. Los ajustes que no envíes se conservan en la medida de lo posible. |
 | Los datos se ven raros | Mira `data/<api>.json` en el repositorio: ahí vive todo. |
 
@@ -396,8 +369,7 @@ npm run disenar
 - **Biblioteca**: libros y préstamos.
 - **Gimnasio**: socios, rutinas y asistencia.
 - **Colegio**: cursos, alumnos y notas.
-- **Con las plantillas**: clona `notas` para un bloc, `inventario` para un almacén y `reservas` para un
-  restaurante. Cada una ya trae ejemplos, límites y documentación.
+- **Restaurante**: mesas y reservas.
 
 Describe tablas, campos, qué se puede hacer y cualquier regla («el precio no puede ser negativo», «el
 correo es obligatorio»). Cuanto más concreto, mejor queda.

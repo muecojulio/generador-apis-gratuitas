@@ -8,43 +8,20 @@
       name="description"
       content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
     />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Outfit:wght@400;500;600&display=swap"
-      rel="stylesheet"
+    <meta name="theme-color" content="#121410" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Taller — crea tu API gratis, para siempre" />
+    <meta
+      property="og:description"
+      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              ink: "#121410",
-              panel: "#1c1f1a",
-              ivory: "#f3f0e8",
-              stone: "#9a978c",
-              clay: "#d4784a",
-              deep: "#a85a32",
-              line: "#2e322b",
-            },
-            fontFamily: {
-              display: ["Fraunces", "Georgia", "serif"],
-              sans: ["Outfit", "system-ui", "sans-serif"],
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      body { background: #121410; }
-      textarea, input { font-size: 16px; }
-      :focus-visible { outline: 2px solid #d4784a; outline-offset: 2px; }
-      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-      .latido { animation: latido 1.6s ease-in-out infinite; }
-      @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-    </style>
+    <meta property="og:locale" content="es_ES" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/estilos.css" />
+    <link rel="preload" href="/assets/fuentes/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
     <header class="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
@@ -57,6 +34,7 @@
       </a>
       <nav class="flex flex-wrap items-center gap-4 text-sm text-stone">
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">Documentación</a>
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#fuentes-publicas">Fuentes públicas</a>
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="#como-funciona">Cómo funciona</a>
         <a
           class="underline-offset-4 hover:text-ivory hover:underline"
@@ -260,6 +238,14 @@
               </li>
               <li>Límite de registros, tamaño y retención configurables por API.</li>
               <li>Modo solo lectura y autenticación simple por token, sin costo.</li>
+              <li>
+                <a class="text-clay underline-offset-4 hover:underline" href="/api/fuentes">Fuentes públicas sin clave</a>
+                que normalizan países, monedas y ciudades.
+              </li>
+              <li>
+                <a class="text-clay underline-offset-4 hover:underline" href="/api/proveedores">Proveedores de IA</a>
+                en orden: primero los que no piden clave y después los que sí.
+              </li>
             </ul>
           </section>
 
@@ -274,9 +260,9 @@
           <section class="rounded-[20px] border border-line bg-panel p-5 text-sm leading-relaxed text-stone">
             <h2 class="font-display text-2xl text-ivory">Coste</h2>
             <p class="mt-3">
-              <span class="text-ivory">Cero.</span> El botón usa GitHub Actions en su capa gratuita, la IA es
-              Gemini (plan gratuito, sin tarjeta) o un servicio público sin clave, y las APIs viven en el plan
-              Hobby de Vercel.
+              <span class="text-ivory">Cero.</span> El botón usa GitHub Actions en su capa gratuita; la IA es un
+              servicio público sin clave y, si ninguno responde, se activan las claves gratuitas que hayas
+              configurado (Gemini, Groq, OpenRouter…). Las APIs viven en el plan Hobby de Vercel.
             </p>
             <a class="mt-3 inline-block text-clay underline-offset-4 hover:underline" href="/api/salud"
               >Ver el estado del taller</a
@@ -301,6 +287,27 @@
           y su documento OpenAPI.
         </p>
         <div id="lista" class="mt-4 divide-y divide-line border-y border-line"></div>
+      </section>
+
+
+      <section id="fuentes-publicas" class="mt-14">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <h2 class="font-display text-3xl">APIs públicas sin clave</h2>
+          <button
+            type="button"
+            id="probar-fuentes"
+            class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline disabled:cursor-wait disabled:opacity-50"
+          >
+            Probar ahora
+          </button>
+        </div>
+        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone">
+          El taller aprovecha servicios públicos que no piden clave ni registro: normaliza países con REST
+          Countries, monedas con Frankfurter y ciudades con Open-Meteo, y reúne un catálogo de APIs gratuitas
+          descubiertas en el repositorio público <span class="text-ivory">public-apis/public-apis</span>. Si una
+          fuente no responde, no pasa nada: el valor se guarda tal cual.
+        </p>
+        <div id="fuentes" class="mt-4"></div>
       </section>
 
       <section class="mt-14 rounded-[20px] border border-line bg-panel p-5 sm:p-6">
@@ -355,7 +362,11 @@
           ·
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">/docs</a>
           ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/fuentes">/api/fuentes</a>
+          ·
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">/api/salud</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
           ·
           <a
             class="underline-offset-4 hover:text-ivory hover:underline"

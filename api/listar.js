@@ -5,26 +5,23 @@
  * Devuelve las APIs publicadas en este taller. Lee el registro que va
  * empaquetado con la función, así que responde al instante y funciona
  * incluso sin ninguna variable de entorno configurada.
+ *
+ * La lista se cachea una hora en la instancia y un minuto en el navegador/CDN,
+ * con ETag para que un `If-None-Match` se lleve un 304 sin cuerpo.
  */
 
+const http = require("../lib/http");
 const catalogo = require("../lib/catalogo");
 const detalle = require("../catalogo.json");
 
-function enviar(res, status, data) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(data));
-}
-
 module.exports = function handler(req, res) {
-  if (req.method === "OPTIONS") {
-    enviar(res, 204, {});
+  const metodo = String((req && req.method) || "GET").toUpperCase();
+  if (metodo === "OPTIONS") {
+    http.enviarJson(req, res, 204, {}, { publico: true });
     return;
   }
-  if (req.method !== "GET") {
-    enviar(res, 405, { error: "Usa GET." });
+  if (metodo !== "GET" && metodo !== "HEAD") {
+    http.enviarJson(req, res, 405, { error: "Usa GET." }, { publico: true, cabeceras: { Allow: "GET, HEAD, OPTIONS" } });
     return;
   }
   try {
@@ -35,13 +32,28 @@ module.exports = function handler(req, res) {
       publicado: (fichas.get(api.nombre) || {}).publicado || null,
       actualizado: (fichas.get(api.nombre) || {}).actualizado || null,
     }));
-    enviar(res, 200, {
-      total: apis.length,
-      apis,
-      documentacion: "/docs",
-      taller: "/api/salud",
-    });
-  } catch (error) {
-    enviar(res, 500, { error: error.message || "No pude leer el catálogo.", apis: [] });
+    http.enviarJson(
+      req,
+      res,
+      200,
+      {
+        total: apis.length,
+        apis,
+        documentacion: "/docs",
+        taller: "/api/salud",
+        fuentes: "/api/fuentes",
+        proveedores: "/api/proveedores",
+        privacidad: "/privacidad",
+      },
+      { publico: true, cache: 60, etag: true }
+    );
+  } catch {
+    http.enviarJson(
+      req,
+      res,
+      500,
+      { error: "No pude leer el catálogo.", apis: [] },
+      { publico: true }
+    );
   }
 };

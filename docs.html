@@ -8,41 +8,20 @@
       name="description"
       content="Documentación automática OpenAPI de cada API publicada en el Taller de APIs gratuitas."
     />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Outfit:wght@400;500;600&display=swap"
-      rel="stylesheet"
+    <meta name="theme-color" content="#121410" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Taller — crea tu API gratis, para siempre" />
+    <meta
+      property="og:description"
+      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
     />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              ink: "#121410",
-              panel: "#1c1f1a",
-              ivory: "#f3f0e8",
-              stone: "#9a978c",
-              clay: "#d4784a",
-              deep: "#a85a32",
-              line: "#2e322b",
-            },
-            fontFamily: {
-              display: ["Fraunces", "Georgia", "serif"],
-              sans: ["Outfit", "system-ui", "sans-serif"],
-              mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      body { background: #121410; }
-      :focus-visible { outline: 2px solid #d4784a; outline-offset: 2px; }
-      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-    </style>
+    <meta property="og:locale" content="es_ES" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/estilos.css" />
+    <link rel="preload" href="/assets/fuentes/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
     <header class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5">
@@ -58,6 +37,8 @@
       </a>
       <nav class="flex items-center gap-4 text-sm text-stone">
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="/">Crear una API</a>
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/fuentes">Fuentes públicas</a>
+        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
         <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
         <a
           class="underline-offset-4 hover:text-ivory hover:underline"
@@ -105,6 +86,10 @@
         <p>Documentación generada desde los planos de este repositorio. Sin servicios de pago.</p>
         <p>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">Estado</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/proveedores">Modelos</a>
+          ·
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
           ·
           <a
             class="underline-offset-4 hover:text-ivory hover:underline"

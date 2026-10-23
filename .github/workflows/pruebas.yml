@@ -1,0 +1,51 @@
+# Pruebas automáticas de cada cambio.
+#
+# No despliega nada ni usa claves: comprueba que las pruebas pasan, que no hay
+# vulnerabilidades en dependencias de ejecución y que el CSS del repositorio es
+# el mismo que produce Tailwind hoy (para que ninguna clase nueva se quede sin
+# estilo).
+#
+# Coste: 0 (minutos gratuitos en repositorios públicos).
+
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Traer el repositorio
+        uses: actions/checkout@v7
+
+      - name: Preparar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar herramientas de desarrollo
+        run: npm ci
+
+      - name: Auditar dependencias de ejecución
+        run: npm audit --omit=dev
+
+      - name: Ejecutar las pruebas
+        env:
+          TALLER_FUENTES: "0"
+        run: npm test
+
+      - name: Comprobar que el CSS está al día
+        run: |
+          npm run css
+          git diff --exit-code -- assets/estilos.css

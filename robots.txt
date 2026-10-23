@@ -1,0 +1,6 @@
+# El catálogo y la documentación son públicos a propósito.
+User-agent: *
+Allow: /
+Disallow: /api/generar
+Disallow: /api/estado
+Disallow: /api/proveedores

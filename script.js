@@ -1,7 +1,7 @@
 // La página del taller. Todo el trabajo pesado vive en el servidor:
 // aquí solo se lee el formulario, se piden APIs y se informa del resultado.
 
-import { analizar, huella, proponerNombre, slug } from "./lib/motor.mjs";
+import { RESERVADOS_API, analizar, huella, proponerNombre, slug } from "./lib/motor.mjs";
 
 const forma = document.querySelector("#forma");
 const nombreInput = document.querySelector("#nombre");
@@ -44,6 +44,13 @@ const MOTORES = {
   kilo: "Kilo Gateway (sin clave)",
   ovh: "OVHcloud AI (sin clave)",
   pollinations: "Pollinations (sin clave)",
+  groq: "Groq (clave gratuita)",
+  openrouter: "OpenRouter (clave gratuita)",
+  cerebras: "Cerebras (clave gratuita)",
+  mistral: "Mistral (clave gratuita)",
+  together: "Together (clave gratuita)",
+  deepseek: "DeepSeek (clave gratuita)",
+  huggingface: "Hugging Face (clave gratuita)",
   incluido: "lector del taller (sin IA)",
 };
 
@@ -52,31 +59,13 @@ function motorTexto(motor) {
   return MOTORES[motor] || motor;
 }
 
-const RESERVADOS = new Set([
-  "api",
-  "assets",
-  "data",
-  "docs",
-  "estado",
-  "generar",
-  "index",
-  "lib",
-  "listar",
-  "public",
-  "salud",
-  "scripts",
-  "spec",
-  "specs",
-  "static",
-]);
-
 function nombreValido(nombre) {
   return (
     typeof nombre === "string" &&
     nombre.length >= 2 &&
     nombre.length <= 48 &&
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(nombre) &&
-    !RESERVADOS.has(nombre)
+    !RESERVADOS_API.has(nombre)
   );
 }
 
@@ -205,16 +194,30 @@ async function cargarLista() {
   vaciar(lista);
   lista.appendChild(texto("p", "Cargando…", "py-4 text-sm text-stone"));
   let apis = [];
+  let fallo = null;
   try {
     const respuesta = await fetch("/api/listar", { cache: "no-store" });
-    if (respuesta.ok) {
-      const json = await respuesta.json();
-      apis = json.apis || [];
-    }
-  } catch {
-    apis = [];
+    if (!respuesta.ok) throw new Error("el servidor respondió " + respuesta.status);
+    const json = await respuesta.json();
+    apis = Array.isArray(json.apis) ? json.apis : [];
+  } catch (error) {
+    // Antes un fallo de red se disfrazaba de «no hay APIs». Mejor decirlo.
+    fallo = error;
   }
   vaciar(lista);
+  if (fallo) {
+    const caja = document.createElement("div");
+    caja.className = "py-4 text-sm text-stone";
+    caja.appendChild(texto("p", "No pude leer la lista de APIs (" + (fallo.message || fallo) + ").", ""));
+    const reintentar = document.createElement("button");
+    reintentar.type = "button";
+    reintentar.className = "mt-2 text-clay underline-offset-4 hover:underline";
+    reintentar.textContent = "Reintentar";
+    reintentar.addEventListener("click", cargarLista);
+    caja.appendChild(reintentar);
+    lista.appendChild(caja);
+    return;
+  }
   if (!apis.length) {
     lista.appendChild(
       texto("p", "Todavía no hay APIs publicadas. Escribe arriba la primera.", "py-4 text-sm text-stone")
@@ -484,6 +487,15 @@ function mostrarResultado(nombre, manifiesto, extras) {
   if (manifiesto.limites) {
     caja.appendChild(texto("p", "Límites: " + limitesResumen(manifiesto.limites) + ".", "mt-3 text-xs text-stone"));
   }
+  if (manifiesto.normalizacion && manifiesto.normalizacion.campos && manifiesto.normalizacion.campos.length) {
+    caja.appendChild(
+      texto(
+        "p",
+        "Normaliza con APIs públicas: " + manifiesto.normalizacion.campos.join(", ") + ".",
+        "mt-1 text-xs text-stone"
+      )
+    );
+  }
   if (manifiesto.autenticacion) {
     caja.appendChild(
       texto(
@@ -597,3 +609,132 @@ tokenModoInput.disabled = !conTokenInput.checked;
 
 refrescarMeta();
 cargarLista();
+
+
+/* APIs públicas sin clave (fuentes del taller) ---------------------------- */
+
+const fuentesCaja = document.querySelector("#fuentes");
+const probarFuentesBoton = document.querySelector("#probar-fuentes");
+
+function tarjetaFuente(fuente, prueba) {
+  const tarjeta = document.createElement("article");
+  tarjeta.className = "rounded-xl border border-line bg-ink p-4";
+
+  const cabecera = document.createElement("div");
+  cabecera.className = "flex flex-wrap items-center justify-between gap-2";
+  cabecera.appendChild(texto("p", fuente.nombre, "text-sm font-medium text-ivory"));
+  cabecera.appendChild(insignia(fuente.categoria || "Varias", "border-clay/40 text-clay"));
+  tarjeta.appendChild(cabecera);
+
+  tarjeta.appendChild(texto("p", fuente.descripcion || "", "mt-2 text-xs leading-relaxed text-stone"));
+
+  const pie = document.createElement("div");
+  pie.className = "mt-3 flex flex-wrap items-center gap-3 text-xs";
+  pie.appendChild(enlace("Probar", fuente.ejemplo, "text-stone hover:text-ivory", true));
+  if (fuente.docs) pie.appendChild(enlace("Docs", fuente.docs, "text-stone hover:text-ivory", true));
+  if (fuente.github) pie.appendChild(enlace("GitHub", fuente.github, "text-stone hover:text-ivory", true));
+  if (prueba) {
+    pie.appendChild(
+      insignia(
+        prueba.ok ? "responde · " + prueba.ms + " ms" : "sin respuesta" + (prueba.estado ? " · HTTP " + prueba.estado : ""),
+        prueba.ok ? "border-emerald-500/40 text-emerald-300" : "border-amber-500/40 text-amber-300"
+      )
+    );
+  }
+  tarjeta.appendChild(pie);
+  return tarjeta;
+}
+
+async function cargarFuentes(opciones) {
+  if (!fuentesCaja) return;
+  const probar = Boolean(opciones && opciones.probar);
+  vaciar(fuentesCaja);
+  fuentesCaja.appendChild(texto("p", probar ? "Probando las fuentes públicas…" : "Cargando fuentes públicas…", "text-sm text-stone"));
+  let json = null;
+  try {
+    const respuesta = await fetch("/api/fuentes?limite=6&githubLimite=6" + (probar ? "&probar=1" : ""), {
+      cache: "no-store",
+    });
+    json = await respuesta.json();
+    if (!respuesta.ok) throw new Error(json.error || "No pude leer las fuentes.");
+  } catch (error) {
+    vaciar(fuentesCaja);
+    fuentesCaja.appendChild(texto("p", "No pude cargar las fuentes públicas: " + (error.message || error), "text-sm text-stone"));
+    return;
+  }
+
+  vaciar(fuentesCaja);
+  const pruebas = new Map((json.prueba || []).map((item) => [item.id, item]));
+  const rejilla = document.createElement("div");
+  rejilla.className = "grid gap-3 sm:grid-cols-2";
+  for (const fuente of json.fuentes || []) rejilla.appendChild(tarjetaFuente(fuente, pruebas.get(fuente.id)));
+  fuentesCaja.appendChild(rejilla);
+
+  const campos = (json.enriquecimiento && json.enriquecimiento.campos) || [];
+  if (campos.length) {
+    fuentesCaja.appendChild(
+      texto(
+        "p",
+        "El taller usa estas fuentes para normalizar los campos " + campos.join(", ") + " al guardar un registro. Si una fuente no responde, el valor se guarda tal cual.",
+        "mt-3 text-xs leading-relaxed text-stone"
+      )
+    );
+  }
+
+  if (json.github) {
+    const bloque = document.createElement("div");
+    bloque.className = "mt-4 rounded-xl border border-line p-4";
+    const titulo = document.createElement("div");
+    titulo.className = "flex flex-wrap items-center justify-between gap-2";
+    titulo.appendChild(texto("p", "Descubiertas en GitHub", "text-sm font-medium text-ivory"));
+    titulo.appendChild(insignia((json.github.total || 0) + " sin clave", "border-emerald-500/40 text-emerald-300"));
+    bloque.appendChild(titulo);
+    bloque.appendChild(
+      texto(
+        "p",
+        "Catálogo de public-apis (licencia MIT) filtrado a las APIs que no piden clave y usan HTTPS. Se lee una vez al día y hay una copia local por si GitHub no responde.",
+        "mt-2 text-xs leading-relaxed text-stone"
+      )
+    );
+    if (json.github.fuentes && json.github.fuentes.length) {
+      const listaGithub = document.createElement("ul");
+      listaGithub.className = "mt-3 space-y-1 text-xs text-stone";
+      for (const fuente of json.github.fuentes) {
+        const fila = document.createElement("li");
+        fila.appendChild(enlace(fuente.nombre, fuente.url, "text-clay hover:underline", true));
+        fila.appendChild(document.createTextNode(" · " + (fuente.categoriaEs || fuente.categoria || "")));
+        listaGithub.appendChild(fila);
+      }
+      bloque.appendChild(listaGithub);
+    }
+    bloque.appendChild(
+      enlace(
+        "Ver el catálogo completo",
+        "/api/fuentes?githubLimite=200",
+        "mt-3 inline-block text-xs text-clay hover:underline",
+        true
+      )
+    );
+    fuentesCaja.appendChild(bloque);
+  }
+
+  const nota = document.createElement("p");
+  nota.className = "mt-3 text-xs leading-relaxed text-stone";
+  nota.appendChild(document.createTextNode("Catálogo en "));
+  nota.appendChild(enlace("/api/fuentes", "/api/fuentes", "text-clay hover:underline", true));
+  nota.appendChild(document.createTextNode(" · Sin clave, sin registro y sin datos personales. "));
+  nota.appendChild(enlace("Privacidad", "/privacidad", "text-clay hover:underline"));
+  fuentesCaja.appendChild(nota);
+}
+
+if (probarFuentesBoton) {
+  probarFuentesBoton.addEventListener("click", async () => {
+    probarFuentesBoton.disabled = true;
+    probarFuentesBoton.textContent = "Probando…";
+    await cargarFuentes({ probar: true });
+    probarFuentesBoton.textContent = "Probar ahora";
+    setTimeout(() => (probarFuentesBoton.disabled = false), 60000);
+  });
+}
+
+if (fuentesCaja) cargarFuentes();

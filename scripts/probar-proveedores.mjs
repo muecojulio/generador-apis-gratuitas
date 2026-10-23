@@ -3,47 +3,43 @@
  * Comprueba qué modelos gratuitos están respondiendo ahora mismo.
  *
  *   node scripts/probar-proveedores.mjs
+ *   SOLO=llm7 node scripts/probar-proveedores.mjs
  *
  * No guarda nada y no crea ninguna API: solo pregunta a cada servicio y cuenta
  * si contestó. Sirve para saber por qué una API se generó con el lector incluido.
+ *
+ * Usa la misma cadena que el taller: primero los servicios públicos sin clave y
+ * después los que tengan una variable de entorno configurada.
  */
 
-import { pedirPlano, proveedoresSinClave } from "../lib/ia.mjs";
+import { estadoProveedores, probarProveedores } from "../lib/ia.mjs";
 
-const DESCRIPCION = [
-  "Tabla libros con campos:",
-  "- titulo (texto, obligatorio, máximo 120)",
-  "- autor (texto, obligatorio)",
-  "- anyo (entero, mínimo 0)",
-  "- leido (sí o no)",
-  "Quiero listar y crear.",
-].join("\n");
+const estado = estadoProveedores();
+const solo = String(process.env.SOLO || "").trim().toLowerCase();
 
-const objetivos = process.env.SOLO ? [process.env.SOLO] : ["gemini", "llm7", "kilo", "ovh", "pollinations"];
+console.log("Comprobando modelos gratuitos (nada de pago, ninguna tarjeta).");
+console.log("Estrategia: " + estado.estrategia + " · orden: " + (estado.orden.join(" → ") || "ninguno") + "\n");
 
-console.log("Comprobando modelos gratuitos (nada de pago, ninguna tarjeta).\n");
-if (!process.env.GEMINI_API_KEY) {
-  console.log("- Gemini: no hay GEMINI_API_KEY; se salta. (Créala gratis en https://aistudio.google.com/apikey)\n");
-}
-for (const proveedor of proveedoresSinClave()) {
+for (const proveedor of estado.sinClave) {
   console.log("- " + proveedor.id + ": " + proveedor.nombre + " -> " + proveedor.url);
+}
+for (const proveedor of estado.conClave) {
+  if (proveedor.configurado) console.log("- " + proveedor.id + ": clave configurada (" + proveedor.variable + ")");
+}
+if (!estado.conClave.some((proveedor) => proveedor.configurado)) {
+  console.log("- Sin claves de IA configuradas: si los públicos fallan, se usa el lector incluido.");
 }
 console.log("");
 
-for (const objetivo of objetivos) {
-  const inicio = Date.now();
-  const respuesta = await pedirPlano({
-    descripcion: DESCRIPCION,
-    nombre: "prueba-proveedores",
-    proveedor: objetivo,
-    aviso: (texto) => console.log("   · " + texto),
-  });
-  const segundos = ((Date.now() - inicio) / 1000).toFixed(1);
-  if (respuesta) {
-    const recursos = respuesta.spec.recursos.map((recurso) => recurso.nombre).join(", ");
-    console.log("OK   " + objetivo + " respondió en " + segundos + "s -> " + recursos + "\n");
-  } else {
-    console.log("FALLA " + objetivo + " no sirvió (" + segundos + "s); el taller usaría el lector incluido.\n");
-  }
+const prueba = await probarProveedores({ solo });
+for (const resultado of prueba.resultados) {
+  const marca = resultado.ok ? "OK   " : "FALLA";
+  const detalle = resultado.error ? " -> " + resultado.error : "";
+  console.log(
+    marca + " " + resultado.id + " (" + resultado.modelo + ") " + resultado.ms + " ms" + detalle
+  );
 }
-console.log("Fin. El taller nunca se queda sin opciones: si nadie responde, usa el lector incluido.");
+if (!prueba.resultados.length) {
+  console.log("No hay proveedores que probar con esa selección. Revisa SOLO o GENERADOR_ESTRATEGIA.");
+}
+console.log("\nFin. El taller nunca se queda sin opciones: si nadie responde, usa el lector incluido.");

@@ -12,7 +12,19 @@
     "local": "node scripts/servidor.mjs",
     "disenar": "node scripts/disenar.mjs",
     "registrar": "node scripts/registrar.mjs",
-    "proveedores": "node scripts/probar-proveedores.mjs"
+    "proveedores": "node scripts/probar-proveedores.mjs",
+    "fuentes": "node scripts/sincronizar-fuentes.mjs",
+    "css": "tailwindcss -c tailwind.config.js -i assets/tailwind.css -o assets/estilos.css --minify",
+    "medir": "node scripts/medir-indices.mjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/outfit": "^5.3.0",
+    "tailwindcss": "^3.4.17"
+  },
+  "overrides": {
+    "postcss-nested": "^9.0.1",
+    "postcss-selector-parser": "^7.1.7"
+  }
 }

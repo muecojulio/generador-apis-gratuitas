@@ -127,6 +127,79 @@ function pintarSelector() {
   });
 }
 
+/* Fuentes públicas y proveedores de IA ----------------------------------- */
+
+async function cargarExtras(contenedor) {
+  try {
+    const [fuentes, proveedores] = await Promise.all([
+      traer("/api/fuentes?limite=8&githubLimite=0").then((r) => r.json),
+      traer("/api/proveedores").then((r) => r.json),
+    ]);
+    contenedor.querySelector("[data-cargando]")?.remove();
+    const listaFuentes = h("div", { class: "mt-3 flex flex-wrap gap-2" });
+    for (const fuente of (fuentes && fuentes.fuentes) || []) {
+      listaFuentes.appendChild(
+        h(
+          "a",
+          {
+            href: fuente.ejemplo,
+            target: "_blank",
+            rel: "noreferrer",
+            class: "rounded-full border border-line px-3 py-1 text-xs text-stone hover:border-clay hover:text-clay",
+          },
+          fuente.nombre
+        )
+      );
+    }
+    if (listaFuentes.childNodes.length) {
+      contenedor.appendChild(h("p", { class: "mt-4 text-xs uppercase tracking-wider text-stone" }, "Sin clave y sin registro"));
+      contenedor.appendChild(listaFuentes);
+    }
+    if (fuentes && fuentes.github) {
+      contenedor.appendChild(
+        h(
+          "p",
+          { class: "mt-3 text-xs leading-relaxed text-stone" },
+          "Además hay " +
+            fuentes.github.total +
+            " APIs sin clave descubiertas en public-apis. " ,
+          h("a", { href: "/api/fuentes?githubLimite=200", class: "text-clay hover:underline" }, "Ver el catálogo")
+        )
+      );
+    }
+    if (proveedores) {
+      // Ancla propia: /api/proveedores enlaza a /docs#proveedores.
+      const cajaProveedores = h("div", { id: "proveedores" });
+      const orden = (proveedores.orden || []).join(" → ");
+      cajaProveedores.appendChild(
+        h(
+          "p",
+          { class: "mt-3 text-xs leading-relaxed text-stone" },
+          "Modelos: " + (orden || "lector incluido") + ". ",
+          h("a", { href: "/api/proveedores", class: "text-clay hover:underline" }, "Ver estado"),
+          "."
+        )
+      );
+      const conClave = (proveedores.conClave || []).filter((item) => item.configurado).length;
+      cajaProveedores.appendChild(
+        h(
+          "p",
+          { class: "mt-1 text-xs leading-relaxed text-stone" },
+          conClave
+            ? "Hay " + conClave + " proveedor(es) con clave configurada como respaldo."
+            : "No hay claves de IA configuradas: si los servicios públicos fallan, se usa el lector incluido."
+        )
+      );
+      contenedor.appendChild(cajaProveedores);
+    }
+  } catch {
+    contenedor.querySelector("[data-cargando]")?.remove();
+    contenedor.appendChild(
+      h("p", { class: "mt-3 text-xs leading-relaxed text-stone" }, "No pude cargar las fuentes públicas ahora mismo.")
+    );
+  }
+}
+
 /* Portada de documentación ---------------------------------------------- */
 
 function renderIndice() {
@@ -239,6 +312,20 @@ function renderIndice() {
     rejilla.appendChild(ficha);
   }
   contenido.appendChild(rejilla);
+
+  const extras = h("section", { id: "fuentes-publicas", class: "mt-8 rounded-[20px] border border-line bg-panel p-5" });
+  extras.appendChild(h("h2", { class: "font-display text-2xl" }, "Fuentes públicas y modelos"));
+  extras.appendChild(
+    h(
+      "p",
+      { class: "mt-2 text-sm leading-relaxed text-stone" },
+      "El taller normaliza países, monedas y ciudades con servicios sin clave y usa modelos gratuitos: primero los públicos y, si no responden, los que se activan con una variable de entorno."
+    )
+  );
+  const cargandoExtras = h("p", { class: "mt-3 text-xs text-stone", "data-cargando": "1" }, "Cargando fuentes públicas…");
+  extras.appendChild(cargandoExtras);
+  contenido.appendChild(extras);
+  cargarExtras(extras);
 
   contenido.appendChild(
     h(
@@ -655,6 +742,11 @@ function renderDocumento(nombre, doc) {
     );
   }
   meta.appendChild(insignia("OpenAPI " + (doc.openapi || "3.0.3")));
+  if (x.normalizacion && x.normalizacion.campos) {
+    meta.appendChild(
+      insignia("Normaliza " + x.normalizacion.campos.join(", "), "border-emerald-500/40 text-emerald-300")
+    );
+  }
   contenido.appendChild(meta);
 
   const enlaces = h("div", { class: "mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm" });
@@ -672,6 +764,7 @@ function renderDocumento(nombre, doc) {
     h("a", { href: "/api/" + encodeURIComponent(nombre), class: "text-stone hover:text-ivory", target: "_blank", rel: "noreferrer" }, "Manifiesto de la API")
   );
   enlaces.appendChild(h("a", { href: "/", class: "text-stone hover:text-ivory" }, "Crear otra API"));
+  enlaces.appendChild(h("a", { href: "/privacidad", class: "text-stone hover:text-ivory" }, "Privacidad"));
   contenido.appendChild(enlaces);
 
   const paneles = h("div", { class: "mt-6 grid gap-4 lg:grid-cols-2" });

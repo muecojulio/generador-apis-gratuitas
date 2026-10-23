@@ -13,6 +13,11 @@ Además, cada API incluye:
   `/docs?api=<nombre>`.
 - **Límite de registros, tamaño y retención de datos configurable** por API.
 - **Modo solo lectura y autenticación simple por token opcional**, sin costo.
+- **Normalización gratuita**: al guardar, los campos `pais`, `moneda` y `ciudad` se corrigen solos con
+  servicios públicos que no piden clave ni registro. Si no responden, el valor se guarda tal cual.
+- **Catálogo de APIs públicas sin clave** en `/api/fuentes`, descubierto del repositorio
+  [public-apis/public-apis](https://github.com/public-apis/public-apis), con copia local.
+- **Caché en memoria, índices por identificador y privacidad explicada** en `/privacidad`.
 
 ---
 
@@ -110,9 +115,15 @@ api/
   estado.js                -> ¿cómo va la creación?
   listar.js                -> catálogo de APIs publicadas
   salud.js                 -> comprobación rápida
-lib/                       -> motor, lector, IA gratuita, OpenAPI, token y límites
-scripts/                   -> generación, pruebas y servidor local
+  fuentes.js               -> APIs públicas sin clave (curadas y descubiertas en GitHub)
+  proveedores.js           -> estado de los modelos gratuitos (con y sin clave)
+lib/                       -> motor, lector, IA gratuita, OpenAPI, token, límites, caché, índices
+lib/publicas.js            -> normaliza países, monedas y ciudades sin clave ni registro
+lib/fuentes-github.js      -> lee public-apis y guarda una copia local de respaldo
+scripts/                   -> generación, pruebas, sincronización, medición y servidor local
 data/                      -> los datos que guardan las APIs creadas
+data/fuentes-publicas.json -> copia local del catálogo descubierto (958 APIs sin clave)
+privacidad.html            -> política de privacidad (sin cookies ni analítica)
 docs.html / docs.js        -> vista de documentación (estática, sin función de Vercel)
 ```
 
@@ -120,7 +131,8 @@ Tres detalles importantes, explicados sin tecnicismos:
 
 1. **Dos archivos dinámicos atienden todas las APIs.** El plan Hobby de Vercel solo admite 12 funciones por
    despliegue; si cada API creada añadiera sus propios archivos, el sitio se rompería a la quinta o sexta.
-   Con el reparto dinámico, el taller usa **6 funciones** y puede sostener muchísimas APIs.
+   Con el reparto dinámico, el taller usa **8 funciones de 12** (6 fijas y 2 dinámicas) y puede sostener
+   muchísimas APIs.
 2. **La IA no escribe el programa.** El modelo solo devuelve un *plano* en JSON (tablas, campos, reglas,
    límites). Quien atiende las peticiones es siempre `lib/runtime.js`, código fijo y revisado. Una
    descripción maliciosa no puede colar código en tu servidor.
@@ -184,16 +196,22 @@ La respuesta es `202` con la dirección de la documentación. La descripción es
    el apartado siguiente. Elige **Production** y **Preview**.
 5. Pulsa **Deploy**. En menos de un minuto tendrás tu dirección: `https://generador-apis-gratuitas-XXX.vercel.app`.
 
-Cada `git push` a `main` vuelve a desplegar solo. Los cambios que solo tocan `data/` no gastan
-despliegues: `vercel.json` los ignora. `cleanUrls` está activo para que `/docs` funcione sin `.html`.
+Cada `git push` a `main` vuelve a desplegar solo. Los cambios que solo tocan los datos de las APIs
+(`data/<api>.json`) no gastan despliegues: `vercel.json` los ignora. La excepción es
+`data/fuentes-publicas.json`, que es código (la copia del catálogo) y sí despliega. `cleanUrls` está activo
+para que `/docs` funcione sin `.html`.
 
 Comprueba el despliegue con:
 
 ```bash
 curl https://TU-SITIO.vercel.app/api/salud
 curl https://TU-SITIO.vercel.app/api/listar
+curl https://TU-SITIO.vercel.app/api/fuentes
 curl https://TU-SITIO.vercel.app/docs?api=ejemplo-notas
 ```
+
+La política de privacidad está en `/privacidad` y el contacto de seguridad en `/.well-known/security.txt`
+(también en `/security.txt`).
 
 ---
 
@@ -226,6 +244,11 @@ Proyecto → **Settings** → **Environment Variables**:
 | `GITHUB_PAT` | la clave `github_pat_…` | Production y Preview |
 | `GENERADOR_SECRETO` | (opcional) una palabra tuya | Production y Preview |
 | `API_TOKEN_<NOMBRE>` | (opcional) token en claro de una API concreta | Production y Preview |
+| `TALLER_FUENTES` | (opcional) `0` apaga la normalización y la consulta de fuentes | Production y Preview |
+| `TALLER_FUENTES_MS` | (opcional) tiempo máximo por fuente, en milisegundos (mínimo 800) | Production y Preview |
+| `TALLER_ORIGENES` | (opcional) orígenes extra separados por comas, para generar desde fuera | Production y Preview |
+| `GENERADOR_ESTRATEGIA` | (opcional) `gratis` (por defecto), `calidad`, `sin-clave` o `con-clave` | Production y Preview |
+| `TALLER_URL` | (opcional) dirección canónica, para que el OpenAPI no dependa de la cabecera `Host` | Production y Preview |
 
 Guarda y pulsa **Redeploy** para que la función la vea. Si defines `GENERADOR_SECRETO`, la página pedirá
 esa palabra para generar APIs y nadie más podrá llenar tu repositorio.
@@ -252,19 +275,33 @@ Repositorio → **Settings** → **Secrets and variables** → **Actions** → *
 **GitHub Models cerró el 30 de julio de 2026.** El taller ya no lo usa. En su lugar, al generar una API se
 prueba en este orden hasta que alguno responda:
 
+El orden por defecto (`GENERADOR_ESTRATEGIA=gratis`) es **sin clave primero** y las variables de entorno
+solo como respaldo, que es justo lo que se pedía: si los servicios públicos no responden, las claves ya
+configuradas siguen funcionando y, si tampoco hay claves, entra el lector incluido.
+
 | Orden | Modelo | Clave | Registro |
 | --- | --- | --- | --- |
-| 1 | **Gemini** (capa gratuita de Google) | `GEMINI_API_KEY` (opcional) | Cuenta Google, sin tarjeta |
-| 2 | **LLM7** | ninguna (`Bearer unused`) | ninguno |
-| 3 | **Kilo Gateway** (modelos `:free`, `kilo-auto/free`) | ninguna | ninguno |
-| 4 | **OVHcloud AI Endpoints** (capa anónima) | ninguna | ninguno |
-| 5 | **Pollinations** (endpoint clásico de texto) | ninguna | ninguno |
-| 6 | **Lector del taller** (`lib/motor.mjs`) | ninguna | ninguno |
+| 1 | **LLM7** | ninguna (`Bearer unused`) | ninguno |
+| 2 | **Kilo Gateway** (modelos `:free`, `kilo-auto/free`) | ninguna | ninguno |
+| 3 | **OVHcloud AI Endpoints** (capa anónima) | ninguna | ninguno |
+| 4 | **Pollinations** (endpoint clásico de texto) | ninguna | ninguno |
+| 5 | **Gemini** (capa gratuita de Google) | `GEMINI_API_KEY`, opcional | cuenta Google, sin tarjeta |
+| 6 | **Groq** | `GROQ_API_KEY`, opcional | capa gratuita, sin tarjeta |
+| 7 | **OpenRouter** (modelos `:free`) | `OPENROUTER_API_KEY`, opcional | capa gratuita |
+| 8 | **Cerebras**, **Mistral**, **Together**, **DeepSeek** | sus variables, opcionales | capa gratuita |
+| 9 | **Hugging Face** Inference | `HF_TOKEN`, opcional | cuenta gratuita |
+| 10 | **Lector del taller** (`lib/motor.mjs`) | ninguna | ninguno |
 
-Los cinco primeros son servicios públicos que no cobran ni piden tarjeta. Si ninguno contesta (o si todos
-están lentos), el taller **no se rompe**: usa el lector incluido, que entiende descripciones claras de
-tablas, campos y reglas sin internet y sin ninguna clave. El lector también entiende límites escritos en
-lenguaje natural («máximo 200 registros», «retención de 30 días», «hasta 64 KB»).
+Los cuatro primeros son servicios públicos que no cobran ni piden tarjeta ni registro. Si ninguno contesta
+(o si todos están lentos), el taller **no se rompe**: prueba los que tengan clave configurada y, al final,
+usa el lector incluido, que entiende descripciones claras de tablas, campos y reglas sin internet y sin
+ninguna clave. El lector también entiende límites escritos en lenguaje natural («máximo 200 registros»,
+«retención de 30 días», «hasta 64 KB»).
+
+Con `GENERADOR_ESTRATEGIA` puedes cambiar el orden: `calidad` pone primero los proveedores con clave,
+`sin-clave` usa solo los públicos y `con-clave` solo los de entorno. `GENERADOR_PROVEEDOR` fuerza uno
+concreto. `GENERADOR_SIN_IA=1` salta la IA por completo. Para ver qué hay disponible ahora mismo:
+`curl https://TU-SITIO.vercel.app/api/proveedores` o `npm run proveedores`.
 
 ### Comprobado el 14 de octubre de 2026 (sin ninguna clave)
 
@@ -284,10 +321,114 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
 
 ---
 
+## APIs públicas sin clave (y sin registro)
+
+El taller no depende de ninguna clave para funcionar mejor. Usa **servicios públicos que no piden cuenta,
+tarjeta ni registro** y los deja caer con elegancia cuando fallan:
+
+| Fuente | Para qué | Sin clave |
+| --- | --- | --- |
+| [REST Countries](https://restcountries.com) | nombres de países, ISO-2/ISO-3, moneda y capital | sí |
+| [Frankfurter](https://frankfurter.app) | códigos y nombres de monedas ISO 4217 | sí |
+| [Open-Meteo Geocoding](https://open-meteo.com/en/docs/geocoding-api) | nombre correcto de una ciudad | sí |
+| [DummyJSON](https://dummyjson.com), [JSONPlaceholder](https://jsonplaceholder.typicode.com) | datos de ejemplo | sí |
+| [Open Library](https://openlibrary.org/developers/api), [Wikipedia REST](https://es.wikipedia.org/api/rest_v1/) | libros y resúmenes | sí |
+| [Hacker News](https://github.com/HackerNews/API), [Open Trivia DB](https://opentdb.com/api_config.php) | noticias y preguntas | sí |
+| [public-apis](https://github.com/public-apis/public-apis) | catálogo de **958 APIs** filtradas a «sin clave + HTTPS» | sí |
+
+### Normalización al guardar
+
+Si un recurso tiene campos llamados `pais`, `moneda` o `ciudad`, al crear o actualizar un registro el taller
+los corrige:
+
+```bash
+curl -X POST https://TU-SITIO.vercel.app/api/mi-api/lugares \
+  -H "Content-Type: application/json" \
+  -d '{"pais":"mexico","moneda":"mxn","ciudad":"cdmx"}'
+# guarda: {"pais":"México","moneda":"MXN","ciudad":"Ciudad de México"}
+```
+
+La respuesta lo anuncia en `X-Normalizado: pais=rest-countries,moneda=frankfurter,ciudad=open-meteo-geo`.
+Si una fuente no responde en `TALLER_FUENTES_MS` (3 s por defecto), **el valor se guarda tal cual** y la
+petición sigue adelante: nunca se pierde un registro por culpa de un tercero. `TALLER_FUENTES=0` apaga todo
+el mecanismo y el taller se comporta como antes. El manifiesto de cada API y su OpenAPI explican qué campos
+se normalizan en `normalizacion` y `x-taller.normalizacion`.
+
+### El catálogo de GitHub
+
+- `GET /api/fuentes` — catálogo curado + APIs descubiertas en `public-apis` (filtradas a sin clave y HTTPS).
+  Parámetros: `buscar`, `categoria`, `limite`, `github=0`, `githubLimite=0…200`, `probar=1`.
+- `GET /api/fuentes?probar=1` — comprueba ahora qué fuentes responden (6 pruebas por minuto y por IP).
+- La copia local vive en `data/fuentes-publicas.json` y se refresca con `npm run fuentes`, que lee el README
+  del repositorio público. Si GitHub no responde, el comando termina con error y **no toca** la copia.
+- El catálogo se lee una vez al día y se cachea; la web funciona incluso sin red porque la copia va incluida
+  en el despliegue.
+
+En la portada hay una sección **APIs públicas sin clave** con el botón *Probar ahora*. En `/docs` aparece el
+mismo resumen con enlaces a la documentación de cada servicio.
+
+---
+
+## Caché, índices y velocidad
+
+El taller no tiene base de datos: los datos son archivos JSON en GitHub. Aun así, se puede evitar trabajo
+repetido, y eso es lo que se hizo:
+
+- **Caché en memoria con TTL** (`lib/cache.js`): catálogo, documentos OpenAPI, normalizaciones y el catálogo
+  de GitHub. Tiene *single flight* (diez peticiones simultáneas de la misma clave provocan **una** lectura
+  remota), invalidación por prefijo y un máximo de 400 entradas.
+- **Índices derivados** (`lib/indice.js`): `GET /api/<api>/<recurso>/{id}` pasa de recorrer la lista (O(n)) a
+  una lectura de diccionario (O(1)); `?buscar=` usa el texto ya normalizado por fila y no distingue acentos
+  ni mayúsculas. El índice se liga al `sha` del archivo, así que si los datos no cambian no se reconstruye.
+- **ETag y 304** en manifiestos, catálogo, fuentes y proveedores: un navegador que ya tiene la respuesta no
+  vuelve a descargarla.
+- **Retención y límites** se aplican antes de escribir, no después de leer.
+
+Para verlo con números en tu máquina:
+
+```bash
+npm run medir
+```
+
+Compara `Array.find` con el índice por id, la búsqueda texto a texto con el índice, la caché contra una
+lectura remota simulada de 5 ms y comprueba que el *single flight* hace una sola carga. En la última
+medición: **~52×** más rápido por id, **~4×** en búsquedas y **~900×** menos tiempo con caché.
+
+Los índices y la caché son estructuras derivadas: se pueden borrar en cualquier momento y nunca se suben al
+repositorio.
+
+---
+
+## Seguridad y privacidad
+
+- **Sin cookies, sin analítica y sin terceros en el navegador.** El CSS y las fuentes se sirven desde el
+  propio sitio (nada de CDNs); la CSP es `default-src 'self'`.
+- **Cabeceras de seguridad** en `vercel.json` y en el servidor local: CSP, `nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy`, `Permissions-Policy`, HSTS, COOP y `Cross-Origin-Resource-Policy`.
+- **CSRF**: crear una API, probar fuentes y probar modelos solo aceptan peticiones del propio sitio
+  (`Origin`/`Sec-Fetch-Site`). Las llamadas sin navegador (curl, Actions) siguen funcionando.
+- **Cupos**: `/api/generar` admite 12 creaciones por hora y por IP, con una sola en curso; las pruebas de
+  fuentes y modelos tienen su propio cupo; los tokens de las APIs bloquean 60 s tras 20 fallos seguidos.
+- **Tokens**: solo se guarda su huella SHA-256 y la comparación es en tiempo constante. El valor en claro se
+  enseña una sola vez y nunca viaja al repositorio.
+- **Datos**: topes de 1 MB por cuerpo, 512 KB por archivo, 40 KB por descripción y validación de tipos,
+  longitudes y enumeraciones. Los errores no filtran rutas ni claves.
+- **Dependencias**: el sitio y la API **no tienen dependencias de ejecución**
+  (`npm audit --omit=dev` → 0 vulnerabilidades). Tailwind y las fuentes solo se usan al compilar; sus avisos
+  de desarrollo conocidos están explicados en [`SECURITY.md`](SECURITY.md) y el flujo `Pruebas` revisa el CSS.
+- **Privacidad**: `/privacidad` explica qué se guarda (los datos que tú escribes), qué no (sin cuentas, sin
+  cookies, sin analítica, sin publicidad) y cómo borrarlo. Contacto de seguridad en
+  `/.well-known/security.txt` y en [`SECURITY.md`](SECURITY.md).
+
+> ⚠️ Los datos de las APIs viven en el repositorio. Si es público, esos datos también lo son. No guardes
+> información personal ni contraseñas.
+
+---
+
 ## Límites que conviene conocer (y que el taller respeta)
 
-- **Vercel Hobby**: 12 funciones por despliegue (usamos 6), 100 despliegues al día, ancho de banda generoso.
-  Suficiente de sobra para un taller.
+- **Vercel Hobby**: 12 funciones por despliegue (usamos 8: 6 fijas y 2 dinámicas), 100 despliegues al día,
+  ancho de banda generoso. Suficiente de sobra para un taller.
 - **GitHub Actions**: minutos ilimitados en repositorios públicos. Cada generación tarda ~1 minuto.
 - **Cupo amable**: una creación a la vez y 12 por hora, para que el taller no se descontrole.
 - **Datos**: se guardan en archivos dentro de `data/` de tu repositorio (`data/<api>.json`), no en una base
@@ -303,23 +444,32 @@ prueba una detrás de otra y, si las tres fallaran algún día, usa el lector in
   eliminan en la siguiente escritura. Los ejemplos iniciales usan la fecha de la primera lectura, así que no
   desaparecen solos al momento.
 - **Token**: la huella SHA-256 es pública (está en el plano). Un token débil se podría adivinar; el que
-  genera la página tiene 192 bits de entropía. No hay límite de intentos por ahora: es autenticación simple
-  para un taller, no un sistema de seguridad completo.
+  genera la página tiene 192 bits de entropía. Tras **20 fallos en un minuto** desde la misma IP, las
+  respuestas pasan a `429` durante 60 segundos. Aun así es autenticación simple para un taller, no un
+  sistema de identidad completo.
 
 ---
 
 ## Trabajar en tu computadora
 
 ```bash
-npm test          # pruebas del lector, motor, registro, generación, OpenAPI, límites y token
-npm run local     # servidor local en http://localhost:3000
-npm run disenar   # crea una API desde NOMBRE + DESCRIPCION
-npm run registrar # rehace lib/registro.js tras tocar api/<nombre>/spec.json
+npm test            # pruebas de todo: lector, motor, HTTP, caché, índices, seguridad y servidor local
+npm run local       # servidor local en http://localhost:3000 (imita a Vercel)
+npm run disenar     # crea una API desde NOMBRE + DESCRIPCION
+npm run registrar   # rehace lib/registro.js tras tocar api/<nombre>/spec.json
 npm run proveedores # prueba los modelos gratuitos
+npm run fuentes     # refresca data/fuentes-publicas.json desde public-apis (necesita red)
+npm run css         # recompila assets/estilos.css con Tailwind (solo si tocas clases)
+npm run medir       # mide índices, búsqueda y caché
 ```
 
-Con el servidor local puedes ver la página, `/docs`, `/docs?api=ejemplo-notas` y
-`/api/ejemplo-notas/openapi.json` sin ninguna clave. Generar o guardar cambios sigue necesitando `GITHUB_PAT`.
+`npm install` solo hace falta para `npm run css`: el sitio y la API no tienen dependencias de ejecución.
+`npm test` levanta el servidor local en un puerto libre y comprueba `/`, `/docs`, `/privacidad`, el CSS,
+`/api/salud`, `/api/fuentes` y una API de ejemplo; no necesita internet ni claves.
+
+Con el servidor local puedes ver la página, `/docs`, `/docs?api=ejemplo-notas`,
+`/api/ejemplo-notas/openapi.json` y `/privacidad` sin ninguna clave. Generar o guardar cambios sigue
+necesitando `GITHUB_PAT`.
 
 Para probar la generación completa sin tocar la nube:
 
@@ -360,6 +510,11 @@ npm run disenar
 | `/docs` da 404 en Vercel | Comprueba que el despliegue incluye `docs.html` y `docs.js`, y que `cleanUrls` está activo. |
 | Quiero volver a generar una API | Usa el mismo nombre: el taller actualiza su plano y conserva los datos. Los ajustes que no envíes se conservan en la medida de lo posible. |
 | Los datos se ven raros | Mira `data/<api>.json` en el repositorio: ahí vive todo. |
+| `/api/fuentes` avisa «No pude leer GitHub» | Es normal sin red o si GitHub limita la API. Se usa la copia local; para refrescarla, `npm run fuentes`. |
+| El país o la moneda se guardan tal cual | La normalización está apagada (`TALLER_FUENTES=0`), no hay red o el campo no se llama `pais`/`moneda`/`ciudad`. Revisa `normalizacion` en el manifiesto. |
+| Una fuente tarda demasiado | Baja `TALLER_FUENTES_MS` (por ejemplo, 1200) o apaga la normalización con `TALLER_FUENTES=0`. |
+| `/api/generar` o `?probar=1` devuelven 403 | La petición viene de otro sitio (CSRF). Llama desde tu propio dominio o añádelo a `TALLER_ORIGENES`. |
+| Demasiadas peticiones (`429`) | Espera lo que indique `Retry-After`: hay cupo por IP en generar, probar fuentes y tras 20 fallos de token. |
 
 ---
 
@@ -375,3 +530,8 @@ Describe tablas, campos, qué se puede hacer y cualquier regla («el precio no p
 correo es obligatorio»). Cuanto más concreto, mejor queda.
 
 Licencia MIT. Hecho para que aprender a publicar APIs no cueste dinero.
+
+Las tipografías **Outfit** y **Fraunces** se sirven desde el propio sitio con licencia SIL Open Font
+License 1.1; el texto de ambas licencias está en `assets/fuentes/OFL-Outfit.txt` y
+`assets/fuentes/OFL-Fraunces.txt`. El catálogo de `public-apis` se usa bajo licencia MIT y el detalle de las
+fuentes públicas está en `/api/fuentes`.

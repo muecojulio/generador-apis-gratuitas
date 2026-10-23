@@ -21,6 +21,7 @@ import os from "node:os";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import {
+  RESERVADOS_API,
   analizar,
   huella,
   normalizar,
@@ -35,8 +36,22 @@ const { crear } = require("../lib/runtime.js");
 const { hash: hashToken } = require("../lib/auth.js");
 const limitesMod = require("../lib/limites.js");
 const { generar: generarOpenapi } = require("../lib/openapi.js");
+const cacheMod = require("../lib/cache.js");
+const indiceMod = require("../lib/indice.js");
+const httpMod = require("../lib/http.js");
+const publicas = require("../lib/publicas.js");
+const fuentesGithub = require("../lib/fuentes-github.js");
+const catalogoMod = require("../lib/catalogo.js");
 
 const RAIZ = path.resolve(new URL("..", import.meta.url).pathname);
+
+// Las pruebas nunca llaman a internet: las fuentes públicas se simulan y el
+// enriquecimiento queda apagado salvo en las pruebas que lo encienden a mano.
+const ENTORNO_FUENTES = process.env.TALLER_FUENTES;
+const ENTORNO_PROBAR = process.env.TALLER_PROBAR;
+process.env.TALLER_FUENTES = "0";
+process.env.TALLER_SILENCIO = "1"; // los fallos simulados se prueban, no se gritan
+const FETCH_ORIGINAL = globalThis.fetch;
 
 const descripcion = [
   "Tabla productos con campos:",
@@ -537,6 +552,31 @@ try {
   );
   assert.equal(reservado.json().status, 400, "no se puede crear una API con un nombre interno");
 
+  // Un navegador de otro sitio no puede disparar la creación (CSRF).
+  const antesCsrf = llamadas.length;
+  const csrf = respuestaJson();
+  await handlerGenerar(
+    {
+      method: "POST",
+      headers: { origin: "https://otro-sitio.example", "sec-fetch-site": "cross-site" },
+      body: { nombre: "csrf-demo", descripcion },
+    },
+    csrf.res
+  );
+  assert.equal(csrf.json().status, 403, "se rechaza el origen ajeno");
+  assert.equal(llamadas.length, antesCsrf, "una petición CSRF no debe llegar a GitHub");
+
+  const mismoSitio = respuestaJson();
+  await handlerGenerar(
+    {
+      method: "POST",
+      headers: { origin: "https://taller.test", host: "taller.test" },
+      body: { nombre: "mismo-sitio", descripcion },
+    },
+    mismoSitio.res
+  );
+  assert.equal(mismoSitio.json().status, 202, "el propio sitio sí puede crear APIs");
+
   const hashMalo = respuestaJson();
   await handlerGenerar(
     {
@@ -562,15 +602,23 @@ require("../api/listar.js")({ method: "GET" }, listadoPublico.res);
 assert.equal(listadoPublico.json().status, 200);
 assert.equal(listadoPublico.json().cuerpo.total, registradas.length);
 assert.equal(listadoPublico.json().cuerpo.documentacion, "/docs");
+assert.equal(listadoPublico.json().cuerpo.fuentes, "/api/fuentes");
+assert.equal(listadoPublico.json().cuerpo.privacidad, "/privacidad");
 assert.equal(Object.hasOwn(listadoPublico.json().cuerpo, "plantillas"), false);
 
 const salud = respuestaJson();
 require("../api/salud.js")({ method: "GET" }, salud.res);
 assert.equal(salud.json().status, 200);
-assert.equal(salud.json().cuerpo.funciones, 6);
+const funcionesFijas = fs.readdirSync(path.join(RAIZ, "api")).filter((archivo) => archivo.endsWith(".js")).length;
+assert.equal(
+  salud.json().cuerpo.funciones,
+  funcionesFijas + 2,
+  "el número de funciones debe contarse de verdad (fijas + 2 dinámicas)"
+);
 assert.equal(salud.json().cuerpo.apis, registradas.length);
 assert.equal(Object.hasOwn(salud.json().cuerpo, "plantillas"), false);
-assert.deepEqual(salud.json().cuerpo.novedades, ["openapi", "limites", "token"]);
+assert.ok(salud.json().cuerpo.novedades.includes("fuentes"), "la salud anuncia las fuentes públicas");
+assert.ok(salud.json().cuerpo.cache && typeof salud.json().cuerpo.cache.entradas === "number");
 
 /* 8. Generación local por descripción, sin red ni cambios en el repositorio */
 
@@ -631,4 +679,594 @@ try {
   fs.rmSync(temporal, { recursive: true, force: true });
 }
 
-console.log("Pruebas ok: lector, motor, entrada, registro, generación, OpenAPI, límites y token (" + registradas.length + " API(s)).");
+
+/* 9. Caché, índices, seguridad y fuentes públicas -------------------------- */
+
+// --- Caché: TTL, borrado y single flight.
+cacheMod.limpiar();
+assert.equal(cacheMod.obtener("nada"), undefined);
+cacheMod.poner("a", 1, 40);
+assert.equal(cacheMod.obtener("a"), 1);
+await new Promise((resolver) => setTimeout(resolver, 70));
+assert.equal(cacheMod.tiene("a"), false, "la caché caduca sola");
+let cargas = 0;
+const [uno, dos] = await Promise.all([
+  cacheMod.recordar("b", 1000, async () => {
+    cargas += 1;
+    await new Promise((resolver) => setTimeout(resolver, 25));
+    return 42;
+  }),
+  cacheMod.recordar("b", 1000, async () => {
+    cargas += 1;
+    return 43;
+  }),
+]);
+assert.equal(cargas, 1, "dos peticiones simultáneas comparten una sola carga");
+assert.equal(uno, 42);
+assert.equal(dos, 42);
+cacheMod.borrarPrefijo("b");
+assert.equal(cacheMod.tiene("b"), false);
+assert.ok(cacheMod.estadisticas().maximo >= 16);
+
+// --- Índices: id O(1), búsqueda sin acentos y recursos por nombre.
+const filasIndice = [
+  { id: "a", nombre: "Café con leche", precio: 3 },
+  { id: "b", nombre: "Té verde", precio: 2 },
+  { id: "zzz-unico", titulo: "Sin coincidencias" },
+];
+const indice = indiceMod.crearIndice(filasIndice);
+assert.equal(indice.total, 3);
+assert.equal(indice.obtener("a").nombre, "Café con leche");
+assert.equal(indice.obtener("no-existe"), undefined);
+assert.equal(indice.buscar("cafe").length, 1, "la búsqueda no distingue acentos");
+assert.equal(indice.buscar("VERDE").length, 1);
+assert.equal(indice.buscar("zzz-unico").length, 0, "el id no entra en la búsqueda de texto");
+assert.equal(indiceMod.crearIndice([{ id: "x", n: 1 }, { id: "x", n: 2 }]).obtener("x").n, 1, "gana el primero");
+const recursosIndice = indiceMod.indexarRecursos([{ nombre: "a" }, { nombre: "b" }, { nombre: "a" }]);
+assert.equal(recursosIndice.total, 2);
+assert.equal(recursosIndice.obtener("a").nombre, "a");
+assert.equal(recursosIndice.obtener("c"), undefined);
+const grandes = Array.from({ length: 5000 }, (_, i) => ({ id: "r" + i, nombre: "n" + i }));
+assert.equal(indiceMod.crearIndice(grandes).obtener("r4999").nombre, "n4999");
+
+// --- Las listas de nombres reservados de motor y catálogo no se separan.
+assert.deepEqual(
+  [...RESERVADOS_API].sort(),
+  [...catalogoMod.RESERVADOS].sort(),
+  "lib/motor.mjs y lib/catalogo.js deben reservar los mismos nombres"
+);
+
+// --- Cabeceras de seguridad, ETag y 304 en una API generada.
+const seguridad = llamada("GET", "/api/tienda-barrio");
+await handler(seguridad.req, seguridad.res);
+await seguridad.json();
+assert.equal(seguridad.headers["X-Content-Type-Options"], "nosniff");
+assert.equal(seguridad.headers["X-Frame-Options"], "DENY");
+assert.equal(seguridad.headers["Referrer-Policy"], "strict-origin-when-cross-origin");
+assert.equal(seguridad.headers["Access-Control-Allow-Origin"], "*", "las APIs generadas son públicas");
+assert.equal(seguridad.headers["Cross-Origin-Resource-Policy"], "cross-origin");
+assert.ok(seguridad.headers.ETag, "el manifiesto lleva ETag");
+assert.equal(seguridad.headers["Cache-Control"], "public, max-age=300, s-maxage=1200");
+
+const sinCambios = llamada("GET", "/api/tienda-barrio", undefined, {
+  "if-none-match": seguridad.headers.ETag,
+});
+await handler(sinCambios.req, sinCambios.res);
+assert.equal(sinCambios.res.statusCode, 304, "If-None-Match responde 304");
+
+// --- El cuerpo tiene topes: 413, 415 y 400 con mensajes claros.
+await assert.rejects(
+  () => httpMod.leerJson({ headers: { "content-type": "application/json" }, body: { texto: "x".repeat(2000) } }, 100),
+  (error) => error.status === 413
+);
+await assert.rejects(
+  () => httpMod.leerJson({ headers: { "content-type": "text/plain" }, body: "hola" }, 1000),
+  (error) => error.status === 415
+);
+await assert.rejects(() => httpMod.leerJson({ headers: {}, body: "{roto" }, 1000), (error) => error.status === 400);
+assert.deepEqual(await httpMod.leerJson({ headers: {}, body: { a: 1 } }, 1000), { a: 1 });
+
+// --- Si no se pudo leer el archivo, se lee la semilla pero NO se escribe.
+let guardadosRotura = 0;
+const almacenRoto = {
+  token: () => "prueba",
+  async leer() {
+    const error = new Error("GitHub no responde");
+    error.status = 502;
+    throw error;
+  },
+  async guardar() {
+    guardadosRotura += 1;
+  },
+};
+const specRoto = { ...plano, nombre: "roto-demo", huella: "roto" };
+const handlerRoto = crear(specRoto, { almacen: almacenRoto });
+const lecturaRespaldo = llamada("GET", "/api/roto-demo/productos");
+await handlerRoto(lecturaRespaldo.req, lecturaRespaldo.res);
+const respaldo = await lecturaRespaldo.json();
+assert.equal(respaldo.status, 200);
+assert.equal(lecturaRespaldo.headers["X-Datos"], "respaldo");
+const escrituraRoto = llamada("POST", "/api/roto-demo/productos", { nombre: "X", precio: 1, existencias: 1 });
+await handlerRoto(escrituraRoto.req, escrituraRoto.res);
+assert.equal((await escrituraRoto.json()).status, 503, "sin leer no se sobrescribe");
+assert.equal(guardadosRotura, 0, "no se llamó a guardar");
+
+const almacenCorrupto = {
+  token: () => "prueba",
+  async leer() {
+    const error = new Error("JSON roto");
+    error.status = 500;
+    error.corrupto = true;
+    throw error;
+  },
+  async guardar() {},
+};
+const handlerCorrupto = crear({ ...specRoto, nombre: "corrupto-demo" }, { almacen: almacenCorrupto });
+const lecturaCorrupta = llamada("GET", "/api/corrupto-demo/productos");
+await handlerCorrupto(lecturaCorrupta.req, lecturaCorrupta.res);
+assert.equal((await lecturaCorrupta.json()).status, 500, "un archivo roto se avisa, no se pisa");
+
+// --- Fuerza bruta: tras muchos fallos, 429.
+let bloqueada = false;
+for (let intento = 0; intento < 30; intento += 1) {
+  const prueba = llamada("GET", "/api/auth-demo/productos", undefined, { authorization: "Bearer malo" });
+  await handlerAuth(prueba.req, prueba.res);
+  const salida = await prueba.json();
+  if (salida.status === 429) {
+    bloqueada = true;
+    break;
+  }
+  assert.equal(salida.status, 401);
+}
+assert.ok(bloqueada, "los intentos fallidos acaban en 429");
+
+// --- Cadena de IA: primero sin clave y con la clave como respaldo.
+const ia = await import("../lib/ia.mjs");
+const variablesIa = [
+  "GEMINI_API_KEY",
+  "GROQ_API_KEY",
+  "OPENROUTER_API_KEY",
+  "CEREBRAS_API_KEY",
+  "MISTRAL_API_KEY",
+  "TOGETHER_API_KEY",
+  "DEEPSEEK_API_KEY",
+  "HF_TOKEN",
+  "GENERADOR_ESTRATEGIA",
+  "GENERADOR_PROVEEDOR",
+  "GENERADOR_SIN_IA",
+];
+const entornoIa = new Map(variablesIa.map((nombre) => [nombre, process.env[nombre]]));
+for (const nombre of variablesIa) delete process.env[nombre];
+
+const PLANO_IA = {
+  titulo: "Pruebas",
+  resumen: "Una API de prueba.",
+  recursos: [{ nombre: "cosas", titulo: "Cosas", campos: [{ nombre: "nombre", tipo: "texto", requerido: true }] }],
+};
+const respuestaIa = (estado, cuerpo) => ({
+  ok: estado >= 200 && estado < 300,
+  status: estado,
+  async text() {
+    return typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo);
+  },
+  async json() {
+    return typeof cuerpo === "string" ? JSON.parse(cuerpo) : cuerpo;
+  },
+});
+
+ia.fijarFetch(async () =>
+  respuestaIa(200, { choices: [{ message: { content: JSON.stringify(PLANO_IA) } }] })
+);
+const elegido = await ia.pedirPlano({ descripcion, nombre: "ia-demo" });
+assert.ok(elegido, "la IA debe devolver un plano");
+assert.equal(elegido.proveedor, "llm7", "sin claves, gana el primero sin clave");
+assert.equal(elegido.spec.nombre, "ia-demo");
+assert.ok(elegido.spec.recursos.length >= 1);
+
+// Con una clave configurada, la estrategia por defecto sigue probando antes
+// los servicios públicos (la clave es respaldo, no requisito).
+process.env.GROQ_API_KEY = "clave-de-prueba";
+const estadoIa = ia.estadoProveedores();
+assert.equal(estadoIa.orden[0], "llm7");
+assert.ok(estadoIa.orden.indexOf("llm7") < estadoIa.orden.indexOf("groq"), "la clave va después");
+assert.equal(estadoIa.conClave.find((item) => item.id === "groq").configurado, true);
+assert.equal(JSON.stringify(estadoIa).includes("clave-de-prueba"), false, "la clave jamás sale en el estado");
+process.env.GENERADOR_ESTRATEGIA = "calidad";
+assert.equal(ia.estadoProveedores().orden[0], "groq", "la estrategia calidad pone la clave primero");
+delete process.env.GENERADOR_ESTRATEGIA;
+delete process.env.GROQ_API_KEY;
+
+// Si el modelo elegido falla, se pasa al siguiente y al final queda el lector.
+process.env.GENERADOR_PROVEEDOR = "ovh";
+const forzado = await ia.pedirPlano({ descripcion, nombre: "ia-forzada" });
+assert.equal(forzado.proveedor, "ovh");
+delete process.env.GENERADOR_PROVEEDOR;
+
+ia.fijarFetch(async () => respuestaIa(200, "esto no es JSON"));
+const sinPlano = await ia.pedirPlano({ descripcion, nombre: "ia-rota" });
+assert.equal(sinPlano, null, "si nadie devuelve un plano, se usa el lector incluido");
+
+process.env.GENERADOR_SIN_IA = "1";
+ia.fijarFetch(async () => {
+  throw new Error("no debería llamarse");
+});
+assert.equal(await ia.pedirPlano({ descripcion, nombre: "ia-apagada" }), null);
+delete process.env.GENERADOR_SIN_IA;
+
+// Diagnóstico: prueba en paralelo y nunca lanza.
+ia.fijarFetch(async (url) => {
+  if (String(url).includes("llm7")) return respuestaIa(200, { choices: [{ message: { content: "{}" } }] });
+  return respuestaIa(503, "sin servicio");
+});
+const pruebaIa = await ia.probarProveedores({ solo: "llm7" });
+assert.equal(pruebaIa.resultados.length, 1);
+assert.equal(pruebaIa.resultados[0].ok, true);
+assert.equal(pruebaIa.hora.length > 10, true);
+
+ia.fijarFetch(FETCH_ORIGINAL);
+for (const [nombre, valor] of entornoIa) {
+  if (valor === undefined) delete process.env[nombre];
+  else process.env[nombre] = valor;
+}
+
+// --- Fuentes públicas sin clave, con red simulada.
+function respuestaFalsa(payload, status) {
+  const codigo = status || 200;
+  return {
+    ok: codigo >= 200 && codigo < 300,
+    status: codigo,
+    async text() {
+      return payload === null ? "" : JSON.stringify(payload);
+    },
+    async json() {
+      return payload;
+    },
+  };
+}
+
+const PAIS_FALSO = [
+  {
+    name: { common: "Mexico", official: "United Mexican States" },
+    translations: { spa: { common: "México", official: "Estados Unidos Mexicanos" } },
+    cca2: "MX",
+    cca3: "MEX",
+    currencies: { MXN: { name: "Mexican peso" } },
+    capital: ["Mexico City"],
+    region: "Americas",
+    altSpellings: ["MX", "MEX"],
+  },
+];
+
+function redPublicaFalsa(url) {
+  const destino = String(url);
+  if (destino.includes("restcountries.com")) return Promise.resolve(respuestaFalsa(PAIS_FALSO));
+  if (destino.includes("frankfurter.app")) return Promise.resolve(respuestaFalsa({ USD: "United States Dollar", MXN: "Mexican Peso" }));
+  if (destino.includes("geocoding-api.open-meteo.com")) {
+    return Promise.resolve(
+      respuestaFalsa({ results: [{ name: "Ciudad de México", country: "México", admin1: "Ciudad de México" }] })
+    );
+  }
+  return Promise.resolve(respuestaFalsa(null, 404));
+}
+
+publicas.__pruebas.reiniciar();
+publicas.__pruebas.fijarFetch(redPublicaFalsa);
+const pais = await publicas.normalizarPais("mexico");
+assert.equal(pais.valor, "México");
+assert.equal(pais.iso2, "MX");
+assert.equal(pais.fuente, "rest-countries");
+const moneda = await publicas.normalizarMoneda("mxn");
+assert.equal(moneda.valor, "MXN");
+const ciudad = await publicas.normalizarCiudad("cdmx");
+assert.equal(ciudad.valor, "Ciudad de México");
+const camposMejorables = [
+  { nombre: "pais", tipo: "texto" },
+  { nombre: "moneda", tipo: "texto" },
+  { nombre: "ciudad", tipo: "texto" },
+];
+const mejorado = await publicas.enriquecer({ campos: camposMejorables }, { pais: "mexico", moneda: "mxn", ciudad: "cdmx" }, { activo: true });
+assert.equal(mejorado.valores.pais, "México");
+assert.equal(mejorado.valores.moneda, "MXN");
+assert.ok(mejorado.aplicados.length >= 3, "se anota qué campos se normalizaron");
+
+// Sin red: solo se usa el respaldo local y nunca se lanza una excepción.
+publicas.__pruebas.reiniciar();
+publicas.__pruebas.fijarFetch(async () => {
+  throw new Error("sin red");
+});
+const paisSinRed = await publicas.normalizarPais("Mexico");
+assert.equal(paisSinRed.valor, "México");
+assert.equal(paisSinRed.fuente, "respaldo");
+assert.equal((await publicas.normalizarMoneda("mxn")).valor, "MXN");
+assert.equal(await publicas.normalizarCiudad("cdmx"), null);
+const mejoradoSinRed = await publicas.enriquecer({ campos: camposMejorables }, { pais: "mexico", ciudad: "cdmx" }, { activo: true });
+assert.equal(mejoradoSinRed.valores.pais, "México");
+assert.equal(mejoradoSinRed.valores.ciudad, "cdmx", "si la fuente falla, el valor se guarda tal cual");
+const apagado = await publicas.enriquecer({ campos: camposMejorables }, { pais: "mexico" }, { activo: false });
+assert.equal(apagado.valores.pais, "mexico");
+assert.equal(apagado.aplicados.length, 0);
+
+// La escritura no se rompe cuando la fuente falla.
+const specEnriquecible = normalizar(
+  {
+    titulo: "Lugares",
+    recursos: [{ nombre: "lugares", titulo: "Lugares", campos: camposMejorables }],
+  },
+  "lugares-demo",
+  "incluido"
+);
+const almacenLugares = memoriaCon(null);
+const handlerLugares = crear(specEnriquecible, { almacen: almacenLugares, enriquecer: true });
+const sinFuente = llamada("POST", "/api/lugares-demo/lugares", { pais: "mexico", moneda: "mxn", ciudad: "cdmx" });
+await handlerLugares(sinFuente.req, sinFuente.res);
+const guardadoSinFuente = await sinFuente.json();
+assert.equal(guardadoSinFuente.status, 201, "una fuente caída no impide guardar");
+assert.equal(guardadoSinFuente.cuerpo.dato.ciudad, "cdmx");
+
+// Con red simulada, el mismo POST normaliza y lo anuncia en X-Normalizado.
+publicas.__pruebas.reiniciar();
+publicas.__pruebas.fijarFetch(redPublicaFalsa);
+const almacenLugaresBien = memoriaCon(null);
+const handlerLugaresBien = crear(specEnriquecible, { almacen: almacenLugaresBien, enriquecer: true });
+const conFuente = llamada("POST", "/api/lugares-demo/lugares", { pais: "mexico", moneda: "mxn", ciudad: "cdmx" });
+await handlerLugaresBien(conFuente.req, conFuente.res);
+const guardadoConFuente = await conFuente.json();
+assert.equal(guardadoConFuente.status, 201);
+assert.equal(guardadoConFuente.cuerpo.dato.pais, "México");
+assert.equal(guardadoConFuente.cuerpo.dato.moneda, "MXN");
+assert.match(conFuente.headers["X-Normalizado"] || "", /pais=rest-countries/);
+
+// Si el valor corregido no cabe en el campo (máximo 8), se guarda el original:
+// una fuente pública nunca puede romper el esquema.
+const specCorta = normalizar(
+  {
+    titulo: "Lugares cortos",
+    recursos: [
+      {
+        nombre: "lugares",
+        titulo: "Lugares",
+        campos: [
+          { nombre: "ciudad", tipo: "texto", max: 8 },
+          { nombre: "pais", tipo: "texto" },
+        ],
+      },
+    ],
+  },
+  "lugares-cortos",
+  "incluido"
+);
+const handlerCorto = crear(specCorta, { almacen: memoriaCon(null), enriquecer: true });
+const corto = llamada("POST", "/api/lugares-cortos/lugares", { ciudad: "cdmx", pais: "mexico" });
+await handlerCorto(corto.req, corto.res);
+const guardadoCorto = await corto.json();
+assert.equal(guardadoCorto.status, 201);
+assert.equal(guardadoCorto.cuerpo.dato.ciudad, "cdmx", "el valor que no cabe se queda como estaba");
+assert.equal(guardadoCorto.cuerpo.dato.pais, "México");
+assert.match(corto.headers["X-Normalizado"] || "", /pais=rest-countries/);
+assert.equal((corto.headers["X-Normalizado"] || "").includes("ciudad"), false);
+
+publicas.__pruebas.fijarFetch(FETCH_ORIGINAL);
+
+// --- Catálogo de GitHub: lectura del README, filtros y respaldo local.
+const markdown = [
+  "### Animals",
+  "API | Description | Auth | HTTPS | CORS ",
+  "|:---|:---|:---|:---|:---|",
+  "| [Axolotl](https://theaxolotlapi.netlify.app/) | Collection of axolotl pictures | No | Yes | No |",
+  "| [Cats](https://thecatapi.com/) | Pictures of cats | `apiKey` | Yes | No |",
+  "| [HTTP](http://httpbin.org/) | Sin HTTPS | No | No | Yes |",
+  "| [Axolotl](https://theaxolotlapi.netlify.app/) | Repetida | No | Yes | No |",
+  "### Weather",
+  "| [Open-Meteo](https://open-meteo.com/) | Weather forecast | No | Yes | Yes |",
+].join("\n");
+const leidoGitHub = fuentesGithub.parsear(markdown);
+assert.equal(leidoGitHub.total, 2, "solo pasan las filas sin clave y con HTTPS");
+assert.equal(leidoGitHub.fuentes[0].nombre, "Axolotl");
+assert.equal(leidoGitHub.fuentes[0].cors, false);
+assert.equal(leidoGitHub.fuentes[1].categoria, "Weather");
+assert.ok(leidoGitHub.categorias.includes("Animals"));
+const copiaLocal = fuentesGithub.instantanea();
+assert.ok(copiaLocal.total > 100, "la copia local del catálogo existe");
+const muestra = fuentesGithub.muestra(copiaLocal, { limite: 5 });
+assert.equal(muestra.fuentes.length, 5);
+assert.ok(muestra.fuentes[0].categoriaEs, "las categorías se traducen al español");
+const soloClima = fuentesGithub.muestra(copiaLocal, { categoria: "Weather", limite: 50 });
+assert.ok(soloClima.fuentes.every((fuente) => fuente.categoria === "Weather"));
+
+fuentesGithub.__pruebas.fijarFetch(async () =>
+  respuestaFalsa({ content: Buffer.from(markdown, "utf8").toString("base64"), encoding: "base64" })
+);
+const vivo = await fuentesGithub.descubrir({ forzar: true });
+assert.equal(vivo.enVivo, true);
+assert.equal(vivo.total, 2);
+fuentesGithub.__pruebas.fijarFetch(async () => {
+  throw new Error("sin red");
+});
+const caido = await fuentesGithub.descubrir({ forzar: true });
+assert.equal(caido.enVivo, false, "si GitHub falla se usa la copia local");
+assert.ok(caido.total > 100);
+fuentesGithub.__pruebas.fijarFetch(FETCH_ORIGINAL);
+
+// --- Los endpoints nuevos responden, cachean y no filtran claves.
+const apiFuentes = require("../api/fuentes.js");
+const fuentesGet = respuestaJson();
+await apiFuentes({ method: "GET", url: "/api/fuentes?github=0", headers: {} }, fuentesGet.res);
+const cuerpoFuentes = fuentesGet.json();
+assert.equal(cuerpoFuentes.status, 200);
+assert.ok(cuerpoFuentes.cuerpo.fuentes.length >= 5);
+assert.ok(cuerpoFuentes.cuerpo.enriquecimiento.campos.includes("pais"));
+assert.equal(cuerpoFuentes.cuerpo.github, null);
+assert.ok(cuerpoFuentes.headers.ETag);
+const fuentes304 = respuestaJson();
+await apiFuentes(
+  { method: "GET", url: "/api/fuentes?github=0", headers: { "if-none-match": cuerpoFuentes.headers.ETag } },
+  fuentes304.res
+);
+assert.equal(fuentes304.res.statusCode, 304);
+
+// `githubLimite=0` significa «no me mandes la lista», no «el valor por defecto».
+const fuentesSinLista = respuestaJson();
+await apiFuentes({ method: "GET", url: "/api/fuentes?limite=2&githubLimite=0", headers: {} }, fuentesSinLista.res);
+const cuerpoSinLista = fuentesSinLista.json();
+assert.equal(cuerpoSinLista.status, 200);
+assert.deepEqual(cuerpoSinLista.cuerpo.github.fuentes, []);
+assert.ok(cuerpoSinLista.cuerpo.github.total > 100);
+
+const apiProveedores = require("../api/proveedores.js");
+process.env.GROQ_API_KEY = "gsk_clave_de_prueba_que_no_debe_salir";
+const proveedoresGet = respuestaJson();
+await apiProveedores({ method: "GET", url: "/api/proveedores", headers: {} }, proveedoresGet.res);
+const cuerpoProveedores = proveedoresGet.json();
+assert.equal(cuerpoProveedores.status, 200);
+assert.equal(cuerpoProveedores.cuerpo.sinClave.length, 4);
+assert.equal(cuerpoProveedores.cuerpo.conClave.length, 8);
+assert.equal(
+  cuerpoProveedores.cuerpo.conClave.find((item) => item.id === "groq").configurado,
+  true
+);
+assert.equal(JSON.stringify(cuerpoProveedores.cuerpo).includes("gsk_clave_de_prueba"), false, "la clave no sale en la respuesta");
+const proveedores304 = respuestaJson();
+await apiProveedores(
+  { method: "GET", url: "/api/proveedores", headers: { "if-none-match": cuerpoProveedores.headers.ETag } },
+  proveedores304.res
+);
+assert.equal(proveedores304.res.statusCode, 304, "la hora no debe invalidar el ETag");
+delete process.env.GROQ_API_KEY;
+
+process.env.TALLER_PROBAR = "0";
+const probarApagado = respuestaJson();
+await apiProveedores({ method: "GET", url: "/api/proveedores?probar=1", headers: {} }, probarApagado.res);
+assert.equal(probarApagado.json().status, 403);
+if (ENTORNO_PROBAR === undefined) delete process.env.TALLER_PROBAR;
+else process.env.TALLER_PROBAR = ENTORNO_PROBAR;
+
+// --- OpenAPI anuncia la normalización y la política de privacidad.
+const specLugares = normalizar(
+  {
+    titulo: "Lugares",
+    recursos: [{ nombre: "lugares", titulo: "Lugares", campos: camposMejorables }],
+  },
+  "paises-demo",
+  "incluido"
+);
+const docLugares = generarOpenapi(specLugares, { baseUrl: "https://taller.test" });
+assert.deepEqual([...docLugares["x-taller"].normalizacion.campos].sort(), ["ciudad", "moneda", "pais"]);
+assert.equal(docLugares["x-taller"].normalizacion.activa, false, "TALLER_FUENTES=0 se refleja en el OpenAPI");
+assert.equal(docLugares.externalDocs.url, "https://taller.test/privacidad");
+const docSinBase = generarOpenapi({ ...specLugares, nombre: "paises-sin-base" });
+assert.equal(docSinBase.externalDocs, undefined, "sin base no se inventa una URL absoluta");
+// Con TALLER_URL no se confía en la cabecera Host (evita envenenarla).
+const openapiMod = require("../lib/openapi.js");
+process.env.TALLER_URL = "https://taller.test";
+assert.equal(openapiMod.baseDe({ headers: { host: "malo.example" } }), "https://taller.test");
+delete process.env.TALLER_URL;
+assert.equal(openapiMod.baseDe({ headers: { host: "malo.example" } }), "https://malo.example");
+
+// --- El sitio: sin CDNs, con CSP estricta y con la política de privacidad.
+for (const archivo of ["script.js", "docs.js"]) {
+  const temporal = path.join(os.tmpdir(), "taller-" + archivo.replace(/\W/g, "-") + ".mjs");
+  fs.copyFileSync(path.join(RAIZ, archivo), temporal);
+  const revision = spawnSync(process.execPath, ["--check", temporal], { encoding: "utf8" });
+  fs.rmSync(temporal, { force: true });
+  assert.equal(revision.status, 0, archivo + ": " + (revision.stderr || ""));
+}
+for (const pagina of ["index.html", "docs.html", "privacidad.html"]) {
+  const html = fs.readFileSync(path.join(RAIZ, pagina), "utf8");
+  assert.equal(/<script(?![^>]*\bsrc=)[^>]*>/.test(html), false, pagina + " no debe tener scripts en línea (CSP)");
+  assert.equal(/\sstyle=/.test(html), false, pagina + " no debe tener estilos en línea (CSP)");
+  assert.equal(/cdn\.tailwindcss\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html), false, pagina + " no debe cargar CDNs de terceros");
+  assert.ok(html.includes("/assets/estilos.css"), pagina + " debe cargar el CSS propio");
+}
+assert.ok(fs.existsSync(path.join(RAIZ, "assets/estilos.css")), "falta el CSS compilado");
+assert.ok(fs.existsSync(path.join(RAIZ, "assets/fuentes/outfit-latin.woff2")), "faltan las fuentes propias");
+
+// El CSS del repositorio debe ser el que produce Tailwind hoy: así una clase
+// nueva en el HTML no se queda sin estilo. Si no hay node_modules, se salta.
+const cliCss = path.join(RAIZ, "node_modules/tailwindcss/lib/cli.js");
+if (fs.existsSync(cliCss)) {
+  const salidaCss = path.join(os.tmpdir(), "taller-estilos-" + process.pid + ".css");
+  const compilado = spawnSync(
+    process.execPath,
+    [cliCss, "-c", path.join(RAIZ, "tailwind.config.js"), "-i", path.join(RAIZ, "assets/tailwind.css"), "-o", salidaCss, "--minify"],
+    { cwd: RAIZ, encoding: "utf8" }
+  );
+  assert.equal(compilado.status, 0, "Tailwind no pudo compilar: " + (compilado.stderr || ""));
+  const sinBanner = (texto) => texto.replace(/^\/\*!\s*tailwindcss[^*]*\*\//, "");
+  const esperado = sinBanner(fs.readFileSync(path.join(RAIZ, "assets/estilos.css"), "utf8"));
+  const real = sinBanner(fs.readFileSync(salidaCss, "utf8"));
+  fs.rmSync(salidaCss, { force: true });
+  assert.equal(real, esperado, "assets/estilos.css está desactualizado: ejecuta npm run css");
+}
+const htmlIndice = fs.readFileSync(path.join(RAIZ, "index.html"), "utf8");
+assert.ok(htmlIndice.includes('href="/privacidad"'), "la portada enlaza la privacidad");
+const configVercel = JSON.parse(fs.readFileSync(path.join(RAIZ, "vercel.json"), "utf8"));
+const cabecerasVercel = JSON.stringify(configVercel.headers);
+assert.ok(cabecerasVercel.includes("Content-Security-Policy"));
+assert.ok(cabecerasVercel.includes("Strict-Transport-Security"));
+assert.ok(cabecerasVercel.includes("default-src 'self'"));
+assert.ok(fs.existsSync(path.join(RAIZ, "privacidad.html")));
+assert.ok(fs.existsSync(path.join(RAIZ, ".well-known/security.txt")));
+
+// --- Servidor local: las rutas principales responden como en Vercel.
+const { spawn } = await import("node:child_process");
+const puerto = 4300 + Math.floor(Math.random() * 400);
+const servidor = spawn(process.execPath, [path.join(RAIZ, "scripts/servidor.mjs")], {
+  cwd: RAIZ,
+  env: { ...process.env, PORT: String(puerto), TALLER_FUENTES: "0" },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+const base = "http://127.0.0.1:" + puerto;
+async function esperarServidor() {
+  for (let intento = 0; intento < 60; intento += 1) {
+    try {
+      const respuesta = await fetch(base + "/api/salud", { signal: AbortSignal.timeout(1000) });
+      if (respuesta.ok) return true;
+    } catch {
+      /* Aún arrancando. */
+    }
+    await new Promise((resolver) => setTimeout(resolver, 100));
+  }
+  return false;
+}
+try {
+  assert.equal(await esperarServidor(), true, "el servidor local debe arrancar");
+  for (const [ruta, esperado] of [
+    ["/", 200],
+    ["/docs", 200],
+    ["/privacidad", 200],
+    ["/assets/estilos.css", 200],
+    ["/api/salud", 200],
+    ["/api/fuentes?github=0", 200],
+    ["/api/ejemplo-notas/notas", 200],
+    ["/.well-known/security.txt", 200],
+  ]) {
+    const respuesta = await fetch(base + ruta, { signal: AbortSignal.timeout(4000) });
+    assert.equal(respuesta.status, esperado, "GET " + ruta);
+    assert.equal(respuesta.headers.get("x-content-type-options"), "nosniff", "nosniff en " + ruta);
+  }
+  const css = await fetch(base + "/assets/estilos.css", { signal: AbortSignal.timeout(4000) });
+  assert.equal(css.headers.get("cache-control"), "no-cache", "el CSS debe revalidarse");
+  const fuente = await fetch(base + "/assets/fuentes/outfit-latin.woff2", { signal: AbortSignal.timeout(4000) });
+  assert.equal(fuente.status, 200);
+  assert.match(fuente.headers.get("cache-control") || "", /immutable/);
+
+  const portada = await fetch(base + "/", { signal: AbortSignal.timeout(4000) });
+  const csp = portada.headers.get("content-security-policy") || "";
+  assert.ok(csp.includes("default-src 'self'"), "el HTML lleva CSP");
+  assert.ok(csp.includes("frame-ancestors 'none'"));
+  const textoPortada = await portada.text();
+  assert.ok(textoPortada.includes("/privacidad"));
+  const inexistente = await fetch(base + "/no-existe", { signal: AbortSignal.timeout(4000) });
+  assert.equal(inexistente.status, 404);
+  const noAutorizada = await fetch(base + "/api/no-existe-todavia", { signal: AbortSignal.timeout(4000) });
+  assert.equal(noAutorizada.status, 404);
+  assert.equal(noAutorizada.headers.get("content-type").includes("application/json"), true);
+} finally {
+  servidor.kill("SIGTERM");
+  await new Promise((resolver) => setTimeout(resolver, 100));
+}
+
+if (ENTORNO_FUENTES === undefined) delete process.env.TALLER_FUENTES;
+else process.env.TALLER_FUENTES = ENTORNO_FUENTES;
+
+console.log("Pruebas ok: lector, motor, entrada, registro, generación, OpenAPI, límites, token, caché, índices, seguridad, fuentes públicas y servidor local (" + registradas.length + " API(s)).");

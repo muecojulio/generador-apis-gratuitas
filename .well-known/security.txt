@@ -1,0 +1,7 @@
+# Contacto para vulnerabilidades del Taller de APIs gratuitas.
+# https://www.rfc-editor.org/rfc/rfc9116
+Contact: https://github.com/muecojulio/generador-apis-gratuitas/security/advisories/new
+Expires: 2027-10-23T00:00:00.000Z
+Preferred-Languages: es, en
+Policy: https://github.com/muecojulio/generador-apis-gratuitas/security/policy
+Acknowledgments: https://github.com/muecojulio/generador-apis-gratuitas/graphs/contributors

@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       solo:
-        description: "Probar solo uno: gemini, llm7, kilo, ovh o pollinations (vacío = todos)"
+        description: "Probar solo uno: llm7, kilo, ovh, pollinations, gemini… (vacío = toda la cadena)"
         required: false
         default: ""
         type: string

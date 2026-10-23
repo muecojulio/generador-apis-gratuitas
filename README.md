@@ -122,7 +122,8 @@ lib/publicas.js            -> normaliza países, monedas y ciudades sin clave ni
 lib/fuentes-github.js      -> lee public-apis y guarda una copia local de respaldo
 scripts/                   -> generación, pruebas, sincronización, medición y servidor local
 data/                      -> los datos que guardan las APIs creadas
-data/fuentes-publicas.json -> copia local del catálogo descubierto (958 APIs sin clave)
+catalogos/                 -> copias locales de catálogos (fuentes públicas descubiertas en GitHub)
+catalogos/fuentes-publicas.json -> 958 APIs sin clave con su licencia y fecha
 privacidad.html            -> política de privacidad (sin cookies ni analítica)
 docs.html / docs.js        -> vista de documentación (estática, sin función de Vercel)
 ```
@@ -197,9 +198,9 @@ La respuesta es `202` con la dirección de la documentación. La descripción es
 5. Pulsa **Deploy**. En menos de un minuto tendrás tu dirección: `https://generador-apis-gratuitas-XXX.vercel.app`.
 
 Cada `git push` a `main` vuelve a desplegar solo. Los cambios que solo tocan los datos de las APIs
-(`data/<api>.json`) no gastan despliegues: `vercel.json` los ignora. La excepción es
-`data/fuentes-publicas.json`, que es código (la copia del catálogo) y sí despliega. `cleanUrls` está activo
-para que `/docs` funcione sin `.html`.
+(`data/<api>.json`) no gastan despliegues: `vercel.json` los ignora. El catálogo (`catalogos/`) queda fuera de
+`data/` a propósito, para que sus cambios sí desplieguen. `cleanUrls` está activo para que `/docs` funcione
+sin `.html`.
 
 Comprueba el despliegue con:
 
@@ -359,7 +360,7 @@ se normalizan en `normalizacion` y `x-taller.normalizacion`.
 - `GET /api/fuentes` — catálogo curado + APIs descubiertas en `public-apis` (filtradas a sin clave y HTTPS).
   Parámetros: `buscar`, `categoria`, `limite`, `github=0`, `githubLimite=0…200`, `probar=1`.
 - `GET /api/fuentes?probar=1` — comprueba ahora qué fuentes responden (6 pruebas por minuto y por IP).
-- La copia local vive en `data/fuentes-publicas.json` y se refresca con `npm run fuentes`, que lee el README
+- La copia local vive en `catalogos/fuentes-publicas.json` y se refresca con `npm run fuentes`, que lee el README
   del repositorio público. Si GitHub no responde, el comando termina con error y **no toca** la copia.
 - El catálogo se lee una vez al día y se cachea; la web funciona incluso sin red porque la copia va incluida
   en el despliegue.
@@ -458,7 +459,7 @@ npm run local       # servidor local en http://localhost:3000 (imita a Vercel)
 npm run disenar     # crea una API desde NOMBRE + DESCRIPCION
 npm run registrar   # rehace lib/registro.js tras tocar api/<nombre>/spec.json
 npm run proveedores # prueba los modelos gratuitos
-npm run fuentes     # refresca data/fuentes-publicas.json desde public-apis (necesita red)
+npm run fuentes     # refresca catalogos/fuentes-publicas.json desde public-apis (necesita red)
 npm run css         # recompila assets/estilos.css con Tailwind (solo si tocas clases)
 npm run medir       # mide índices, búsqueda y caché
 ```

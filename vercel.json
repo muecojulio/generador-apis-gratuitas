@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "cleanUrls": true,
-  "ignoreCommand": "cambios=$(git diff --name-only HEAD^ HEAD 2>/dev/null)\nif [ $? -ne 0 ]; then exit 1; fi\nif [ -z \"$cambios\" ]; then exit 0; fi\nfuera=0\nfor archivo in $cambios; do\n  case \"$archivo\" in\n    data/fuentes-publicas.json) fuera=1 ;;\n    data/*) : ;;\n    *) fuera=1 ;;\n  esac\ndone\n[ \"$fuera\" = \"1\" ] && exit 1\nexit 0",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)data' || exit 1",
   "headers": [
     {
       "source": "/(.*)",

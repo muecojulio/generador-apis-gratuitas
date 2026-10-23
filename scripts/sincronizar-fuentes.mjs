@@ -6,7 +6,7 @@
  *
  * Lee el README de `public-apis/public-apis` (licencia MIT) desde GitHub, se
  * queda con las filas `Auth = No` y `HTTPS = Yes`, y escribe
- * `data/fuentes-publicas.json`.
+ * `catalogos/fuentes-publicas.json`.
  *
  * Esa copia es el respaldo de `/api/fuentes` cuando GitHub no responde y, al
  * estar dentro del repositorio, Vercel la empaqueta con la función.
@@ -19,7 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 import fuentesGithub from "../lib/fuentes-github.js";
 
-const DESTINO = path.resolve(process.cwd(), "data", "fuentes-publicas.json");
+const DESTINO = path.resolve(process.cwd(), "catalogos", "fuentes-publicas.json");
 
 const catalogo = await fuentesGithub.descubrir({ forzar: true });
 if (!catalogo.enVivo) {

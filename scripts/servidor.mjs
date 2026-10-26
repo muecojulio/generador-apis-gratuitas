@@ -50,11 +50,12 @@ const TIPOS = {
 };
 
 const CACHE_INMUTABLE = "public, max-age=31536000, immutable";
+const MODO_PREVIEW = process.env.TALLER_PREVIEW === "1";
 const CSP_LOCAL = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "frame-ancestors 'none'",
+  ...(MODO_PREVIEW ? [] : ["frame-ancestors 'none'"]),
   "form-action 'self'",
   "img-src 'self' data:",
   "script-src 'self'",
@@ -99,10 +100,10 @@ function estatico(ruta) {
 
 function cabecerasSeguridad(res, esApi) {
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "DENY");
+  if (!MODO_PREVIEW) res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  if (!MODO_PREVIEW) res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   if (!esApi) res.setHeader("Content-Security-Policy", CSP_LOCAL);
 }

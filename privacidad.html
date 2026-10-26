@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="tema-fragua">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Privacidad — Taller de APIs gratuitas</title>
+    <title>Privacidad y Seguridad — Taller Vivo de APIs</title>
     <meta
       name="description"
       content="Política de privacidad del Taller de APIs gratuitas: qué datos se tratan, dónde se guardan, qué terceros intervienen y cómo ejercer tus derechos."
     />
-    <meta name="theme-color" content="#121410" />
+    <meta name="theme-color" content="#0e100d" />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/estilos.css" />
@@ -16,94 +16,114 @@
     <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
-    <header class="mx-auto flex max-w-4xl items-center justify-between px-5 py-5">
-      <a href="/" class="flex items-center gap-3">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-          <circle cx="14" cy="11" r="4.5" fill="#d4784a" />
-          <path d="M3 20.5h22" stroke="#f3f0e8" stroke-width="1.5" />
-        </svg>
-        <span class="font-display text-xl tracking-tight">Taller</span>
-        <span class="rounded-full border border-line px-2 py-0.5 text-[11px] uppercase tracking-wider text-stone"
-          >Privacidad</span
-        >
-      </a>
-      <nav class="flex items-center gap-4 text-sm text-stone">
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/">Crear una API</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">Documentación</a>
-      </nav>
+    <header class="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-3.5">
+        <a href="/" class="group flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/40 bg-panel shadow-brillo transition-transform group-hover:scale-105">
+            <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M6 23h20" stroke="#f6f2e9" stroke-width="2" stroke-linecap="round" />
+              <path d="M10 18l6-9 6 9" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+              <circle cx="16" cy="11" r="4.8" fill="#e87a45" />
+              <circle cx="9" cy="23" r="2" fill="#34d399" />
+              <circle cx="23" cy="23" r="2" fill="#38bdf8" />
+            </svg>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-display text-xl tracking-tight text-ivory">Taller</span>
+            <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-300"
+              >Privacidad</span
+            >
+          </div>
+        </a>
+        <nav class="flex items-center gap-4 text-sm text-stone">
+          <a class="transition-colors hover:text-clay" href="/">← Crear una API</a>
+          <a class="transition-colors hover:text-clay" href="/docs">Documentación</a>
+          <a class="transition-colors hover:text-clay" href="/api/salud">/api/salud</a>
+        </nav>
+      </div>
     </header>
 
-    <main class="mx-auto max-w-4xl px-5 pb-20">
-      <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">Transparencia</p>
-      <h1 class="mt-3 font-display text-4xl leading-tight tracking-tight sm:text-5xl">Política de privacidad</h1>
-      <p class="mt-4 max-w-2xl leading-relaxed text-stone">
-        Este taller es un proyecto de código abierto que publica APIs dentro de un repositorio. La regla de oro:
-        <span class="text-ivory">cuantos menos datos, mejor</span>. No hay cuentas, no hay cookies de seguimiento,
-        no hay analítica y no se pide ningún dato personal para usar la página.
-      </p>
-      <p class="mt-2 text-xs text-stone">Última actualización: <time datetime="2026-10-23">23 de octubre de 2026</time>.</p>
+    <main class="mx-auto max-w-5xl px-5 pb-20">
+      <section class="tarjeta-destacada mt-6 rounded-[24px] p-6 sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-clay">Transparencia y Soberanía de Datos</p>
+        <h1 class="mt-2 font-display text-4xl leading-tight tracking-tight sm:text-5xl">Política de privacidad</h1>
+        <p class="mt-3 max-w-2xl leading-relaxed text-stone">
+          Este taller es un proyecto de código abierto que publica APIs dentro de un repositorio. La regla de oro:
+          <span class="text-ivory">cuantos menos datos, mejor</span>. No hay cuentas, no hay cookies de seguimiento,
+          no hay analítica y no se pide ningún dato personal para usar la página.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-xs">
+          <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-300">
+            🍪 0 Cookies y 0 Rastreadores
+          </span>
+          <span class="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 font-medium text-sky-300">
+            🔐 Tokens SHA-256 generados en tu navegador
+          </span>
+          <span class="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-medium text-amber-300">
+            🛡️ CSP estricta · Fuentes autoalojadas
+          </span>
+        </div>
+        <p class="mt-4 text-xs text-stone">
+          Última actualización: <time datetime="2026-10-25">25 de octubre de 2026</time>.
+        </p>
+      </section>
 
-      <div class="mt-8 space-y-6">
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">1. Quién es el responsable</h2>
+      <div class="mt-8 grid gap-5 md:grid-cols-2">
+        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <h2 class="font-display text-2xl text-ivory">1. Quién es el responsable</h2>
           <p class="mt-3 text-sm leading-relaxed text-stone">
             El proyecto <span class="text-ivory">generador-apis-gratuitas</span> se mantiene en
-            <a class="text-clay underline-offset-4 hover:underline" href="https://github.com/muecojulio/generador-apis-gratuitas" target="_blank" rel="noreferrer"
+            <a
+              class="text-clay underline-offset-4 hover:underline"
+              href="https://github.com/muecojulio/generador-apis-gratuitas"
+              target="_blank"
+              rel="noreferrer"
               >GitHub</a
-            >. Si despliegas tu propia copia en Vercel, <span class="text-ivory">tú eres el responsable del tratamiento</span>
-            de esa instalación y debes adaptar este texto a tu caso. Para la instancia pública de demostración, el
-            contacto es el repositorio (issues) y la dirección de seguridad indicada en
+            >. Si despliegas tu propia copia en Vercel,
+            <span class="text-ivory">tú eres el responsable del tratamiento</span> de esa instalación. Para la
+            instancia pública de demostración, el contacto es el repositorio (issues) y la dirección indicada en
             <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">SECURITY.md</code>.
           </p>
         </section>
 
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">2. Qué datos se tratan</h2>
+        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <h2 class="font-display text-2xl text-ivory">2. Para qué se usan</h2>
+          <p class="mt-3 text-sm leading-relaxed text-stone">
+            Solo para prestar el servicio: generar el plano de tu API, guardarlo en el repositorio, publicarlo,
+            documentarlo y proteger el taller del abuso. La base legal es tu consentimiento al enviar el formulario y
+            el interés legítimo en mantener el servicio seguro y disponible. No hay perfilado ni venta de datos.
+          </p>
+        </section>
+      </div>
+
+      <div class="mt-5 space-y-5">
+        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <h2 class="font-display text-2xl text-ivory">3. Qué datos se tratan</h2>
           <ul class="mt-3 space-y-3 text-sm leading-relaxed text-stone">
             <li>
-              <span class="text-ivory">Lo que escribes al crear una API.</span> El nombre de la ruta y la descripción
-              (tablas, campos y reglas). Se envían a GitHub Actions para generar el plano y a un proveedor de IA
-              gratuito. <span class="text-ivory">No escribas datos personales, contraseñas ni información confidencial</span>
+              <span class="font-medium text-ivory">Lo que escribes al crear una API.</span> El nombre de la ruta y la
+              descripción (tablas, campos y reglas). Se envían a GitHub Actions para generar el plano y a un proveedor
+              de IA gratuito. <span class="text-ivory">No escribas datos personales, contraseñas ni información confidencial</span>
               en la descripción.
             </li>
             <li>
-              <span class="text-ivory">Los datos de las APIs publicadas.</span> Viven en archivos
-              <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">data/&lt;api&gt;.json</code> dentro
-              del repositorio. Si el repositorio es público, <span class="text-ivory">esos datos también lo son</span>.
-              El taller no está pensado para información personal sensible.
+              <span class="font-medium text-ivory">Los datos de las APIs publicadas.</span> Viven en archivos
+              <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">data/&lt;api&gt;.json</code>
+              dentro del repositorio. Si el repositorio es público, <span class="text-ivory">esos datos también lo son</span>.
             </li>
             <li>
-              <span class="text-ivory">Tokens de acceso.</span> Se generan en tu navegador y solo se guarda su huella
-              SHA-256 (64 caracteres). El token en claro se muestra una vez y no se envía al repositorio. Si activas
-              «Guardar en esta pestaña» en la documentación, se guarda en el
-              <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">localStorage</code> de tu navegador;
-              no viaja a ningún servidor.
+              <span class="font-medium text-ivory">Tokens de acceso.</span> Se generan en tu navegador y solo se guarda
+              su huella SHA-256 (64 caracteres). El token en claro se muestra una vez y no se envía al repositorio.
             </li>
             <li>
-              <span class="text-ivory">Datos técnicos mínimos.</span> Como cualquier sitio, Vercel registra la petición
-              (IP, fecha, ruta y agente de usuario) para servirla y proteger el servicio. No los usamos para perfiles
-              publicitarios ni los cruzamos con otras fuentes. Los contadores de cupo del taller son en memoria y se
-              olvidan en minutos.
-            </li>
-            <li>
-              <span class="text-ivory">Lo que no se recoge.</span> No hay registro de usuarios, ni correo, ni teléfono,
-              ni cookies de analítica, ni píxeles de redes sociales, ni fingerprinting.
+              <span class="font-medium text-ivory">Datos técnicos mínimos.</span> Vercel registra la petición HTTP para
+              servirla y proteger el servicio. Los contadores de cupo del taller son en memoria y se olvidan en minutos.
             </li>
           </ul>
         </section>
 
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">3. Para qué se usan</h2>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            Solo para prestar el servicio: generar el plano de tu API, guardarlo en el repositorio, publicarlo,
-            documentarlo y proteger el taller del abuso. La base legal es tu consentimiento al enviar el formulario y
-            el interés legítimo en mantener el servicio seguro y disponible. No hay perfilado, ni decisiones
-            automatizadas con efectos legales, ni venta de datos.
-          </p>
-        </section>
-
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">4. Terceros que intervienen</h2>
+        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <h2 class="font-display text-2xl text-ivory">4. Terceros que intervienen</h2>
           <div class="mt-3 overflow-x-auto">
             <table class="w-full border-collapse text-left text-sm">
               <thead>
@@ -115,105 +135,76 @@
               </thead>
               <tbody class="text-stone">
                 <tr class="border-b border-line/60">
-                  <td class="py-2 pr-4 text-ivory">GitHub</td>
-                  <td class="py-2 pr-4">Nombre y descripción de la API; contenido de los datos</td>
-                  <td class="py-2">Repositorio y ejecución del flujo de creación</td>
+                  <td class="py-2.5 pr-4 font-medium text-ivory">GitHub</td>
+                  <td class="py-2.5 pr-4">Nombre y descripción de la API; contenido de los datos</td>
+                  <td class="py-2.5">Repositorio y ejecución del flujo de creación</td>
                 </tr>
                 <tr class="border-b border-line/60">
-                  <td class="py-2 pr-4 text-ivory">Vercel</td>
-                  <td class="py-2 pr-4">Peticiones HTTP (IP, fecha, ruta, agente)</td>
-                  <td class="py-2">Alojamiento y funciones</td>
+                  <td class="py-2.5 pr-4 font-medium text-ivory">Vercel</td>
+                  <td class="py-2.5 pr-4">Peticiones HTTP (IP, fecha, ruta, agente)</td>
+                  <td class="py-2.5">Alojamiento y funciones serverless</td>
                 </tr>
                 <tr class="border-b border-line/60">
-                  <td class="py-2 pr-4 text-ivory">Modelos de IA gratuitos</td>
-                  <td class="py-2 pr-4">La descripción que escribes (LLM7, Kilo, OVHcloud, Pollinations o el que tenga clave configurada)</td>
-                  <td class="py-2">Convertir la descripción en un plano JSON</td>
+                  <td class="py-2.5 pr-4 font-medium text-ivory">Modelos de IA gratuitos</td>
+                  <td class="py-2.5 pr-4">La descripción escrita (LLM7, Kilo, OVHcloud, Pollinations o respaldo)</td>
+                  <td class="py-2.5">Convertir la descripción en un plano JSON</td>
                 </tr>
                 <tr class="border-b border-line/60">
-                  <td class="py-2 pr-4 text-ivory">Fuentes públicas sin clave</td>
-                  <td class="py-2 pr-4">Solo el valor de un campo <code class="font-mono text-xs">pais</code>, <code class="font-mono text-xs">moneda</code> o <code class="font-mono text-xs">ciudad</code></td>
-                  <td class="py-2">Normalizar ese valor (REST Countries, Frankfurter, Open-Meteo)</td>
+                  <td class="py-2.5 pr-4 font-medium text-ivory">Fuentes públicas sin clave</td>
+                  <td class="py-2.5 pr-4">Solo el valor de un campo <code class="font-mono text-xs">pais</code>, <code class="font-mono text-xs">moneda</code> o <code class="font-mono text-xs">ciudad</code></td>
+                  <td class="py-2.5">Normalizar ese valor (REST Countries, Frankfurter, Open-Meteo)</td>
                 </tr>
                 <tr>
-                  <td class="py-2 pr-4 text-ivory">GitHub (public-apis)</td>
-                  <td class="py-2 pr-4">Nada tuyo: solo se lee su catálogo público de APIs</td>
-                  <td class="py-2">Mostrar ideas de APIs sin clave</td>
+                  <td class="py-2.5 pr-4 font-medium text-ivory">GitHub (public-apis)</td>
+                  <td class="py-2.5 pr-4">Nada tuyo: solo se lee su catálogo público de APIs</td>
+                  <td class="py-2.5">Mostrar ideas de APIs sin clave</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p class="mt-3 text-xs leading-relaxed text-stone">
-            Cada servicio tiene su propia política de privacidad y puede estar fuera de tu país. Al usar el formulario
-            aceptas que la descripción se procese en esos servicios. Si no quieres compartirla, puedes generar la API
-            ejecutando el taller en tu computadora con <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">GENERADOR_SIN_IA=1 npm run disenar</code>,
-            que no llama a ningún modelo externo.
-          </p>
         </section>
 
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">5. Cookies y almacenamiento local</h2>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            No se usan cookies. El navegador solo guarda, si tú lo pides, el token de una API en
-            <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">localStorage</code> de la vista de
-            documentación. Puedes borrarlo con el botón «Borrar» de esa misma vista o limpiando los datos del sitio.
-          </p>
-        </section>
+        <div class="grid gap-5 md:grid-cols-2">
+          <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+            <h2 class="font-display text-2xl text-ivory">5. Almacenamiento y Retención</h2>
+            <p class="mt-3 text-sm leading-relaxed text-stone">
+              No se usan cookies. Los planos y datos se conservan mientras existan en el repositorio. Si una API define
+              <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">retencionDias</code>, los
+              registros más antiguos se descartan automáticamente.
+            </p>
+          </section>
 
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">6. Cuánto tiempo se conserva</h2>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            Los planos y los datos se conservan mientras existan en el repositorio. Si una API define
-            <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">retencionDias</code>, los registros
-            más antiguos se ocultan y se borran en la siguiente escritura. Al eliminar la carpeta de la API y los datos,
-            desaparecen del sitio en el siguiente despliegue. Los contadores de cupo en memoria se olvidan solos y los
-            registros de Vercel siguen su propio periodo de retención.
-          </p>
-        </section>
-
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">7. Tus derechos</h2>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            Puedes solicitar acceso, rectificación, cancelación, oposición y portabilidad de tus datos, y retirar tu
-            consentimiento en cualquier momento. Para ejercerlos, abre un
-            <a class="text-clay underline-offset-4 hover:underline" href="https://github.com/muecojulio/generador-apis-gratuitas/issues" target="_blank" rel="noreferrer">issue en el repositorio</a>
-            indicando la API afectada. Como los datos son públicos, también puedes corregirlos o borrarlos tú mismo en
-            el repositorio. Si consideras que no se ha atendido bien tu solicitud, puedes acudir a tu autoridad de
-            protección de datos (por ejemplo, el INAI en México o la AEPD en España).
-          </p>
-        </section>
-
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">8. Seguridad</h2>
-          <ul class="mt-3 space-y-2 text-sm leading-relaxed text-stone">
-            <li>Todo el sitio viaja por HTTPS con HSTS y cabeceras de seguridad (CSP, nosniff, sin frames).</li>
-            <li>Los tokens solo se guardan como huella SHA-256 y se comparan en tiempo constante.</li>
-            <li>Hay límites de tamaño de cuerpo, de registros, de peticiones y bloqueo tras intentos fallidos.</li>
-            <li>Las dependencias son mínimas y se revisan con <code class="font-mono text-xs">npm audit</code> en cada cambio.</li>
-            <li>No se acepta ejecutar código generado por IA: solo se interpreta un plano de datos validado.</li>
-          </ul>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            ¿Encuentras una vulnerabilidad? No la publiques con datos reales: usa el aviso privado descrito en
-            <a class="text-clay underline-offset-4 hover:underline" href="https://github.com/muecojulio/generador-apis-gratuitas/security/policy" target="_blank" rel="noreferrer">SECURITY.md</a>.
-          </p>
-        </section>
-
-        <section class="rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-          <h2 class="font-display text-2xl">9. Menores y cambios</h2>
-          <p class="mt-3 text-sm leading-relaxed text-stone">
-            El taller no está dirigido a menores de 14 años y no solicita datos de menores. Si cambia esta política, se
-            actualizará esta página y la fecha de arriba. Los cambios importantes se anunciarán en el repositorio.
-          </p>
-        </section>
+          <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+            <h2 class="font-display text-2xl text-ivory">6. Tus derechos y Seguridad</h2>
+            <p class="mt-3 text-sm leading-relaxed text-stone">
+              Puedes ejercer tus derechos de acceso, rectificación o borrado abriendo un
+              <a
+                class="text-clay underline-offset-4 hover:underline"
+                href="https://github.com/muecojulio/generador-apis-gratuitas/issues"
+                target="_blank"
+                rel="noreferrer"
+                >issue en el repositorio</a
+              >. Para avisos de seguridad privados, consulta
+              <a
+                class="text-clay underline-offset-4 hover:underline"
+                href="https://github.com/muecojulio/generador-apis-gratuitas/security/policy"
+                target="_blank"
+                rel="noreferrer"
+                >SECURITY.md</a
+              >.
+            </p>
+          </section>
+        </div>
       </div>
 
       <p class="mt-8 text-sm text-stone">
         ¿Volvemos al taller? <a class="text-clay underline-offset-4 hover:underline" href="/">Crear una API</a> ·
-        <a class="text-clay underline-offset-4 hover:underline" href="/docs">Ver la documentación</a>.
+        <a class="text-clay underline-offset-4 hover:underline" href="/docs">Ver el Explorador OpenAPI</a>.
       </p>
     </main>
 
-    <footer class="border-t border-line">
-      <div class="mx-auto flex max-w-4xl flex-col gap-2 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
+    <footer class="border-t border-line bg-panel/60">
+      <div class="mx-auto flex max-w-5xl flex-col gap-2 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
         <p>Hecho con planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre.</p>
         <p>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>

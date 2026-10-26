@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="tema-fragua">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Taller — crea tu API gratis, para siempre</title>
+    <title>Taller Vivo — Diseña, prueba y publica tu API gratis para siempre</title>
     <meta
       name="description"
-      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
+      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby, modelos de IA de acceso libre y 958 APIs públicas."
     />
-    <meta name="theme-color" content="#121410" />
+    <meta name="theme-color" content="#0e100d" />
     <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Taller — crea tu API gratis, para siempre" />
+    <meta property="og:title" content="Taller Vivo — crea tu API gratis, para siempre" />
     <meta
       property="og:description"
       content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
@@ -24,350 +24,959 @@
     <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
-    <header class="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
-      <a href="/" class="flex items-center gap-3">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-          <circle cx="14" cy="11" r="4.5" fill="#d4784a" />
-          <path d="M3 20.5h22" stroke="#f3f0e8" stroke-width="1.5" />
-        </svg>
-        <span class="font-display text-xl tracking-tight">Taller</span>
-      </a>
-      <nav class="flex flex-wrap items-center gap-4 text-sm text-stone">
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">Documentación</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#fuentes-publicas">Fuentes públicas</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="#como-funciona">Cómo funciona</a>
-        <a
-          class="underline-offset-4 hover:text-ivory hover:underline"
-          href="https://github.com/muecojulio/generador-apis-gratuitas"
-          >Código</a
-        >
-      </nav>
+    <!-- Barra superior cristal con navegación y selector de atmósfera viva -->
+    <header class="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-3.5">
+        <a href="/" class="group flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/40 bg-panel shadow-brillo transition-transform group-hover:scale-105">
+            <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M6 23h20" stroke="#f6f2e9" stroke-width="2" stroke-linecap="round" />
+              <path d="M10 18l6-9 6 9" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+              <circle cx="16" cy="11" r="4.8" fill="#e87a45" />
+              <circle cx="9" cy="23" r="2" fill="#34d399" />
+              <circle cx="23" cy="23" r="2" fill="#38bdf8" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display text-xl tracking-tight text-ivory">Taller</span>
+              <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                Estudio Vivo
+              </span>
+            </div>
+            <p class="text-[11px] text-stone">Forja abierta de APIs · 0 € para siempre</p>
+          </div>
+        </a>
+
+        <nav class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-stone">
+          <a class="transition-colors hover:text-clay" href="#disenador">Diseñador</a>
+          <a class="transition-colors hover:text-clay" href="#consola-viva">Consola en vivo</a>
+          <a class="transition-colors hover:text-clay" href="#apis-publicadas">Catálogo</a>
+          <a class="transition-colors hover:text-clay" href="#fuentes-publicas">958 APIs públicas</a>
+          <a class="transition-colors hover:text-clay" href="/docs">Documentación</a>
+          <a
+            class="transition-colors hover:text-ivory"
+            href="https://github.com/muecojulio/generador-apis-gratuitas"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub ↗</a
+          >
+        </nav>
+
+        <!-- Selector de atmósfera visual (100 % CSS propio, sin estilos en línea) -->
+        <div class="flex items-center gap-1.5 rounded-full border border-line bg-panel/90 p-1 text-xs" role="group" aria-label="Atmósfera visual">
+          <button
+            type="button"
+            data-tema="tema-fragua"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium transition-all chip-activo"
+            title="Atmósfera Fragua Cobre"
+          >
+            🔥 Fragua
+          </button>
+          <button
+            type="button"
+            data-tema="tema-nebulosa"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
+            title="Atmósfera Nebulosa Cyber"
+          >
+            🌌 Nebulosa
+          </button>
+          <button
+            type="button"
+            data-tema="tema-bosque"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
+            title="Atmósfera Bosque Bioluminiscente"
+          >
+            🌿 Bio
+          </button>
+        </div>
+      </div>
     </header>
 
-    <main class="mx-auto max-w-5xl px-5 pb-20">
-      <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">
-        Un repositorio · Todas las APIs · 0 € para siempre
-      </p>
-      <h1 class="mt-3 max-w-2xl font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
-        Describe la API.<br />La nube la publica.
-      </h1>
-      <p class="mt-4 max-w-2xl text-base leading-relaxed text-stone">
-        Escribe las tablas, los campos y lo que se puede hacer. El taller abre la carpeta de esa API en este
-        mismo repositorio y deja una dirección que responde de verdad, con GET, POST, PUT y DELETE. Además,
-        cada API nace con su documentación OpenAPI, límites de tamaño y retención, y un token opcional. Sin
-        tarjetas, sin servidores de pago y sin cuentas de pago.
-      </p>
+    <main class="mx-auto max-w-6xl px-5 pb-24">
+      <!-- Barra de telemetría en tiempo real -->
+      <section
+        id="telemetria-viva"
+        aria-label="Estado del sistema en tiempo real"
+        class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line/90 bg-panel/80 px-4 py-3 text-xs backdrop-blur-sm"
+      >
+        <div class="flex items-center gap-2.5">
+          <span class="punto-vivo" aria-hidden="true"></span>
+          <span class="font-medium text-ivory">Pulso del Taller:</span>
+          <span id="pulso-estado" class="text-emerald-300">Conectando con el motor…</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span class="rounded-full border border-line bg-ink/80 px-3 py-1 font-mono text-[11px] text-stone">
+            APIs activas: <strong id="stat-apis" class="text-ivory">3</strong>
+          </span>
+          <span class="rounded-full border border-line bg-ink/80 px-3 py-1 font-mono text-[11px] text-stone">
+            Funciones Vercel: <strong id="stat-funciones" class="text-clay">8/12</strong>
+          </span>
+          <span class="rounded-full border border-line bg-ink/80 px-3 py-1 font-mono text-[11px] text-stone">
+            Motores IA: <strong id="stat-motores" class="text-amber-300">4 sin clave + 8 respaldo</strong>
+          </span>
+          <a
+            href="/api/salud"
+            target="_blank"
+            rel="noreferrer"
+            class="rounded-full border border-clay/40 bg-clay/10 px-3 py-1 font-mono text-[11px] text-clay transition-colors hover:bg-clay/20"
+          >
+            /api/salud ↗
+          </a>
+        </div>
+      </section>
 
-      <div class="mt-8 flex flex-wrap gap-2 text-xs text-stone">
-        <span class="rounded-full border border-line px-3 py-1">GitHub Free</span>
-        <span class="rounded-full border border-line px-3 py-1">Vercel Hobby</span>
-        <span class="rounded-full border border-line px-3 py-1">IA gratuita: Gemini o sin clave</span>
-        <span class="rounded-full border border-line px-3 py-1">OpenAPI automático</span>
-        <span class="rounded-full border border-line px-3 py-1">Token opcional</span>
-        <span class="rounded-full border border-line px-3 py-1">Límites por API</span>
-        <span class="rounded-full border border-line px-3 py-1">Datos en tu propio repositorio</span>
-      </div>
+      <!-- Hero principal con arquitectura viva -->
+      <section class="mt-8 grid items-center gap-8 lg:grid-cols-12">
+        <div class="lg:col-span-7">
+          <div class="inline-flex flex-wrap items-center gap-2 rounded-full border border-clay/40 bg-clay/10 px-3.5 py-1.5 text-xs font-medium text-clay">
+            <span>✨ Inspirado en Hoppscotch, Scalar, PocketBase y public-apis</span>
+          </div>
+          <h1 class="mt-4 font-display text-4xl leading-[1.04] tracking-tight sm:text-6xl">
+            Describe tu idea.<br />
+            <span class="texto-gradiente">La nube forja tu API viva.</span>
+          </h1>
+          <p class="mt-4 max-w-2xl text-base leading-relaxed text-stone sm:text-lg">
+            Escribe en español las tablas, los campos y las reglas de tu proyecto. El taller diseña el esquema,
+            abre su carpeta en este repositorio y despliega un endpoint real con
+            <span class="font-mono text-xs text-emerald-300">GET</span>,
+            <span class="font-mono text-xs text-sky-300">POST</span>,
+            <span class="font-mono text-xs text-amber-300">PUT</span> y
+            <span class="font-mono text-xs text-rose-300">DELETE</span>, documentación OpenAPI 3.0 interactiva,
+            enriquecimiento automático con APIs públicas y protección SHA-256 opcional.
+          </p>
 
-      <div class="mt-10 grid gap-6 lg:grid-cols-5">
-        <form id="forma" class="rounded-[20px] border border-line bg-panel p-5 sm:p-6 lg:col-span-3">
-          <label for="nombre" class="block text-sm font-medium">Nombre de la ruta</label>
-          <input
-            id="nombre"
-            name="nombre"
-            maxlength="48"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="tienda-barrio"
-            class="mt-2 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/70"
-          />
-          <p id="ruta" class="mt-2 min-h-5 font-mono text-xs text-stone">/api/</p>
-
-          <label for="descripcion" class="mt-5 block text-sm font-medium">
-            Qué debe hacer (cuanto más detalle, mejor)
-          </label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            required
-            rows="14"
-            spellcheck="false"
-            placeholder="Tabla productos con campos:&#10;- nombre (texto, obligatorio, máximo 80)&#10;- precio (número, obligatorio, mínimo 0)&#10;- existencias (entero, obligatorio)&#10;- activo (sí o no)&#10;&#10;Tabla categorias con campos nombre y descripcion.&#10;Quiero listar, crear, actualizar y borrar.&#10;El precio no puede ser negativo."
-            class="mt-2 min-h-72 w-full resize-y rounded-xl border border-line bg-ink px-4 py-3 leading-relaxed text-ivory placeholder:text-stone/70"
-          ></textarea>
-          <div class="mt-2 flex items-center justify-between gap-3 text-xs text-stone">
-            <button type="button" id="ejemplo" class="underline-offset-4 hover:text-ivory hover:underline">
-              Rellenar un ejemplo
-            </button>
-            <span><span id="cuenta">0</span> caracteres</span>
+          <div class="mt-6 flex flex-wrap gap-2 text-xs">
+            <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-medium text-emerald-300">
+              ⚡ 0 € · GitHub Free + Vercel Hobby
+            </span>
+            <span class="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 font-medium text-sky-300">
+              🤖 Cadena IA sin clave (LLM7 · Kilo · OVH · Pollinations)
+            </span>
+            <span class="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 font-medium text-amber-300">
+              🌍 Normaliza países, divisas y ciudades en vivo
+            </span>
+            <span class="rounded-full border border-purple-500/40 bg-purple-500/10 px-3 py-1.5 font-medium text-purple-300">
+              🔐 Token SHA-256 en tu navegador + OpenAPI 3.0
+            </span>
           </div>
 
-          <details class="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-stone">
-            <summary class="cursor-pointer select-none text-ivory">Ajustes de la API (opcionales)</summary>
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-              <label class="flex items-start gap-2 leading-relaxed">
-                <input id="solo-lectura" type="checkbox" class="mt-1 h-4 w-4 accent-[#d4784a]" />
-                <span><span class="text-ivory">Solo lectura.</span> Solo se publican rutas GET.</span>
-              </label>
-              <label class="flex items-start gap-2 leading-relaxed">
-                <input id="con-token" type="checkbox" class="mt-1 h-4 w-4 accent-[#d4784a]" />
-                <span
-                  ><span class="text-ivory">Token opcional.</span> Se crea en tu navegador; al servidor solo
-                  viaja su huella SHA-256.</span
-                >
-              </label>
-              <div>
-                <label for="token-modo" class="block text-xs uppercase tracking-wider text-stone"
-                  >Protección del token</label
-                >
-                <select
-                  id="token-modo"
-                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory disabled:opacity-50"
-                  disabled
-                >
-                  <option value="escritura">Solo escritura (lecturas públicas)</option>
-                  <option value="todo">Todo (lectura y escritura)</option>
-                </select>
+          <div class="mt-7 flex flex-wrap items-center gap-3">
+            <a
+              href="#disenador"
+              class="boton-brillo inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold"
+            >
+              <span>Diseñar una API ahora</span>
+              <span aria-hidden="true">→</span>
+            </a>
+            <a
+              href="#consola-viva"
+              class="chip-interactivo inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-ivory"
+            >
+              <span>⚡ Probar APIs en la consola viva</span>
+            </a>
+            <a
+              href="/docs"
+              class="chip-interactivo inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-stone hover:text-ivory"
+            >
+              <span>📖 Explorador OpenAPI</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Panel escénico derecho: Circuito en vivo del Taller -->
+        <div class="lg:col-span-5">
+          <div class="tarjeta-destacada rounded-[24px] p-5 sm:p-6">
+            <div class="flex items-center justify-between gap-2 border-b border-line/80 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="h-2.5 w-2.5 rounded-full bg-rose-400/80"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
+                <span class="ml-1 font-mono text-xs text-stone">circuito-del-taller.sh</span>
               </div>
-              <div>
-                <label for="max-registros" class="block text-xs uppercase tracking-wider text-stone"
-                  >Máximo de registros por recurso</label
-                >
-                <input
-                  id="max-registros"
-                  type="number"
-                  min="1"
-                  max="5000"
-                  value="500"
-                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
-                />
+              <span class="rounded-full border border-clay/40 bg-clay/15 px-2.5 py-0.5 font-mono text-[10px] text-clay">
+                100 % Serverless
+              </span>
+            </div>
+
+            <div class="mt-4 space-y-3">
+              <div class="flex items-start gap-3 rounded-xl border border-line/80 bg-ink/75 p-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-clay/20 font-mono text-xs font-bold text-clay">
+                  01
+                </span>
+                <div>
+                  <p class="text-xs font-semibold text-ivory">Describes tablas y reglas en español</p>
+                  <p class="mt-0.5 text-[11px] leading-relaxed text-stone">
+                    El visualizador dibuja el diagrama de tablas y rutas al instante en tu navegador.
+                  </p>
+                </div>
               </div>
-              <div>
-                <label for="retencion" class="block text-xs uppercase tracking-wider text-stone"
-                  >Retención en días (0 = no borrar)</label
-                >
-                <input
-                  id="retencion"
-                  type="number"
-                  min="0"
-                  max="3650"
-                  value="0"
-                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
-                />
+
+              <div class="flex items-start gap-3 rounded-xl border border-line/80 bg-ink/75 p-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-500/20 font-mono text-xs font-bold text-sky-300">
+                  02
+                </span>
+                <div>
+                  <p class="text-xs font-semibold text-ivory">IA sin clave + GitHub Actions generan el plano</p>
+                  <p class="mt-0.5 text-[11px] leading-relaxed text-stone">
+                    Se guarda <code class="text-ivory">api/tu-api/spec.json</code> validado; nunca se ejecuta código arbitrario.
+                  </p>
+                </div>
               </div>
+
+              <div class="flex items-start gap-3 rounded-xl border border-line/80 bg-ink/75 p-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 font-mono text-xs font-bold text-emerald-300">
+                  03
+                </span>
+                <div>
+                  <p class="text-xs font-semibold text-ivory">Enriquecimiento automático con APIs públicas</p>
+                  <p class="mt-0.5 text-[11px] leading-relaxed text-stone">
+                    Campos como <code class="text-emerald-300">pais</code>, <code class="text-amber-300">moneda</code> y
+                    <code class="text-sky-300">ciudad</code> se normalizan solos al guardar datos.
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 rounded-xl border border-line/80 bg-ink/75 p-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 font-mono text-xs font-bold text-amber-300">
+                  04
+                </span>
+                <div>
+                  <p class="text-xs font-semibold text-ivory">Endpoint vivo + OpenAPI 3.0 + Caché ETag</p>
+                  <p class="mt-0.5 text-[11px] leading-relaxed text-stone">
+                    Índice en memoria O(1), búsqueda sin acentos y consola lista para probar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Galería creativa de escenarios vivos (Inspiración en 1 clic) -->
+      <section id="disenador" class="mt-14">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
+              1 · Laboratorio de Diseño Interactivo
+            </p>
+            <h2 class="mt-1 font-display text-3xl tracking-tight sm:text-4xl">
+              Elige una chispa creativa o diseña desde cero
+            </h2>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              id="sorprendeme"
+              class="chip-interactivo rounded-xl px-3.5 py-2 text-xs font-medium text-ivory"
+            >
+              🎲 Sorpréndeme con una idea
+            </button>
+            <button
+              type="button"
+              id="ejemplo"
+              class="chip-interactivo rounded-xl px-3.5 py-2 text-xs font-medium text-clay"
+            >
+              ✨ Rellenar un ejemplo
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjetas de escenarios pre-armados que llenan la descripción y activan el diagrama -->
+        <div id="galeria-escenarios" class="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-6"></div>
+
+        <!-- Estudio dividido: Formulario a la izquierda, Arquitectura en vivo a la derecha -->
+        <div class="mt-6 grid gap-6 lg:grid-cols-12">
+          <form id="forma" class="tarjeta-viva rounded-[24px] p-5 sm:p-7 lg:col-span-7">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line/80 pb-4">
               <div>
-                <label for="max-kb" class="block text-xs uppercase tracking-wider text-stone"
-                  >Tamaño máximo en KB</label
-                >
+                <h3 class="font-display text-2xl text-ivory"> Mesa de Forja</h3>
+                <p class="text-xs text-stone">Define la ruta, añade bloques con un clic y ajusta la seguridad.</p>
+              </div>
+              <span class="rounded-full border border-line bg-ink px-3 py-1 font-mono text-xs text-clay" id="ruta">/api/</span>
+            </div>
+
+            <div class="mt-5">
+              <label for="nombre" class="block text-sm font-medium text-ivory">Nombre de la ruta (slug)</label>
+              <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
-                  id="max-kb"
-                  type="number"
-                  min="4"
-                  max="512"
-                  value="256"
-                  class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                  id="nombre"
+                  name="nombre"
+                  maxlength="48"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="tienda-barrio"
+                  class="w-full rounded-xl border border-line bg-ink px-4 py-3 font-mono text-sm text-ivory placeholder:text-stone/60 focus:border-clay"
                 />
               </div>
             </div>
-            <p class="mt-3 text-xs leading-relaxed">
-              El token se muestra una sola vez al terminar; guárdalo. Si vuelves a generar una API protegida
-              sin marcar la casilla, se le quita la protección. Puedes ajustar los límites de registros,
-              tamaño y retención en estos campos. El archivo de datos no puede pasar de 512 KB.
-            </p>
-          </details>
 
-          <details class="mt-4 rounded-xl border border-line px-4 py-3 text-sm text-stone">
-            <summary class="cursor-pointer select-none text-ivory">Clave del taller (opcional)</summary>
-            <p class="mt-2 leading-relaxed">
-              Si en Vercel definiste la variable <code class="text-ivory">GENERADOR_SECRETO</code>, escribe aquí
-              ese mismo valor. Si no la definiste, déjalo vacío: cualquiera que abra la página podrá crear
-              APIs.
-            </p>
-            <input
-              id="secreto"
-              name="secreto"
-              type="password"
-              autocomplete="off"
-              placeholder="Déjalo vacío si no configuraste una"
-              class="mt-3 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/70"
-            />
-          </details>
+            <!-- Barra de inserción rápida de tablas y campos mágicos -->
+            <div class="mt-5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <label for="descripcion" class="block text-sm font-medium text-ivory">
+                  Descripción de tablas, campos y reglas
+                </label>
+                <span class="font-mono text-xs text-stone"><span id="cuenta">0</span> / 8000 caracteres</span>
+              </div>
 
-          <button
-            id="enviar"
-            type="submit"
-            class="mt-6 flex min-h-12 w-full items-center justify-center rounded-xl bg-clay px-4 text-base font-medium text-ink hover:bg-deep disabled:cursor-wait disabled:opacity-60"
-          >
-            Generar API en la nube
-          </button>
-          <p id="estado" class="mt-4 min-h-6 text-sm leading-relaxed text-stone" role="status" aria-live="polite"></p>
-          <div id="resultado" class="hidden"></div>
-        </form>
+              <div class="mt-2 flex flex-wrap items-center gap-1.5 rounded-xl border border-line/80 bg-ink/70 p-2">
+                <span class="mr-1 text-[11px] font-medium text-stone">Insertar bloque:</span>
+                <button type="button" data-insertar="tabla" class="chip-interactivo rounded-lg px-2.5 py-1 text-[11px] text-ivory">
+                  + Tabla
+                </button>
+                <button type="button" data-insertar="texto" class="chip-interactivo rounded-lg px-2.5 py-1 text-[11px] text-stone">
+                  + Texto
+                </button>
+                <button type="button" data-insertar="numero" class="chip-interactivo rounded-lg px-2.5 py-1 text-[11px] text-stone">
+                  + Número
+                </button>
+                <button type="button" data-insertar="fecha" class="chip-interactivo rounded-lg px-2.5 py-1 text-[11px] text-stone">
+                  + Fecha
+                </button>
+                <button type="button" data-insertar="email" class="chip-interactivo rounded-lg px-2.5 py-1 text-[11px] text-stone">
+                  + Email
+                </button>
+                <button
+                  type="button"
+                  data-insertar="pais"
+                  class="chip-interactivo rounded-lg border-emerald-500/40 px-2.5 py-1 text-[11px] text-emerald-300"
+                  title="Se normaliza automáticamente con REST Countries"
+                >
+                  + 🌍 país
+                </button>
+                <button
+                  type="button"
+                  data-insertar="moneda"
+                  class="chip-interactivo rounded-lg border-amber-500/40 px-2.5 py-1 text-[11px] text-amber-300"
+                  title="Se normaliza automáticamente con Frankfurter (BCE)"
+                >
+                  + 💱 moneda
+                </button>
+                <button
+                  type="button"
+                  data-insertar="ciudad"
+                  class="chip-interactivo rounded-lg border-sky-500/40 px-2.5 py-1 text-[11px] text-sky-300"
+                  title="Se normaliza automáticamente con Open-Meteo Geocoding"
+                >
+                  + 📍 ciudad
+                </button>
+              </div>
 
-        <aside class="flex flex-col gap-4 lg:col-span-2">
-          <section id="como-funciona" class="rounded-[20px] border border-line bg-panel p-5">
-            <h2 class="font-display text-2xl">Cómo nace</h2>
-            <ol class="mt-4 space-y-4 text-sm leading-relaxed text-stone">
-              <li><span class="mr-2 font-display text-ivory">01</span>Describes tablas, campos y reglas.</li>
-              <li>
-                <span class="mr-2 font-display text-ivory">02</span>GitHub Actions escribe
-                <span class="text-ivory">api/tu-nombre/spec.json</span> y regenera el registro.
-              </li>
-              <li>
-                <span class="mr-2 font-display text-ivory">03</span>Vercel publica
-                <span class="text-ivory">/api/tu-nombre</span> con las rutas listas.
-              </li>
-              <li>
-                <span class="mr-2 font-display text-ivory">04</span>La documentación queda en
-                <span class="text-ivory">/docs?api=tu-nombre</span> y el plano en
-                <span class="text-ivory">/api/tu-nombre/openapi.json</span>.
-              </li>
-            </ol>
-            <p class="mt-4 border-t border-line pt-4 text-xs leading-relaxed text-stone">
-              La IA solo devuelve un <span class="text-ivory">plano</span> (qué tablas, qué campos, qué
-              reglas). El programa que atiende las peticiones es siempre del taller, revisado y fijo: ningún
-              texto tuyo se convierte en código ejecutable.
-            </p>
-          </section>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                required
+                rows="12"
+                spellcheck="false"
+                placeholder="Tabla productos con campos:&#10;- nombre (texto, obligatorio, máximo 80)&#10;- precio (número, obligatorio, mínimo 0)&#10;- existencias (entero, obligatorio)&#10;- activo (sí o no)&#10;&#10;Tabla categorias con campos nombre y descripcion.&#10;Quiero listar, crear, actualizar y borrar.&#10;El precio no puede ser negativo."
+                class="mt-2.5 min-h-64 w-full resize-y rounded-xl border border-line bg-ink px-4 py-3 font-mono text-sm leading-relaxed text-ivory placeholder:text-stone/60 focus:border-clay"
+              ></textarea>
+            </div>
 
-          <section class="rounded-[20px] border border-line p-5">
-            <h2 class="font-display text-2xl">Documentación y control</h2>
-            <ul class="mt-3 space-y-2 text-sm leading-relaxed text-stone">
-              <li>
-                <a class="text-clay underline-offset-4 hover:underline" href="/docs">Documentación automática</a>
-                generada del plano, con ejemplos y enlace a Swagger.
-              </li>
-              <li>Límite de registros, tamaño y retención configurables por API.</li>
-              <li>Modo solo lectura y autenticación simple por token, sin costo.</li>
-              <li>
-                <a class="text-clay underline-offset-4 hover:underline" href="/api/fuentes">Fuentes públicas sin clave</a>
-                que normalizan países, monedas y ciudades.
-              </li>
-              <li>
-                <a class="text-clay underline-offset-4 hover:underline" href="/api/proveedores">Proveedores de IA</a>
-                en orden: primero los que no piden clave y después los que sí.
-              </li>
-            </ul>
-          </section>
+            <details class="mt-4 rounded-xl border border-line bg-ink/60 px-4 py-3.5 text-sm text-stone">
+              <summary class="cursor-pointer select-none font-medium text-ivory">
+                ⚙️ Límites, modo solo lectura y token SHA-256 (opcionales)
+              </summary>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="flex items-start gap-2.5 rounded-xl border border-line/70 bg-panel/60 p-3 leading-relaxed">
+                  <input id="solo-lectura" type="checkbox" class="mt-1 h-4 w-4 accent-[#e87a45]" />
+                  <span><span class="font-medium text-ivory">Solo lectura.</span> Publica únicamente rutas GET.</span>
+                </label>
+                <label class="flex items-start gap-2.5 rounded-xl border border-line/70 bg-panel/60 p-3 leading-relaxed">
+                  <input id="con-token" type="checkbox" class="mt-1 h-4 w-4 accent-[#e87a45]" />
+                  <span>
+                    <span class="font-medium text-ivory">Token opcional.</span> Se genera en tu navegador; al servidor solo viaja su huella SHA-256.
+                  </span>
+                </label>
+                <div>
+                  <label for="token-modo" class="block text-xs uppercase tracking-wider text-stone">
+                    Protección del token
+                  </label>
+                  <select
+                    id="token-modo"
+                    class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory disabled:opacity-50"
+                    disabled
+                  >
+                    <option value="escritura">Solo escritura (lecturas públicas)</option>
+                    <option value="todo">Todo (lectura y escritura)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="max-registros" class="block text-xs uppercase tracking-wider text-stone">
+                    Máximo de registros por recurso
+                  </label>
+                  <input
+                    id="max-registros"
+                    type="number"
+                    min="1"
+                    max="5000"
+                    value="500"
+                    class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                  />
+                </div>
+                <div>
+                  <label for="retencion" class="block text-xs uppercase tracking-wider text-stone">
+                    Retención en días (0 = no borrar)
+                  </label>
+                  <input
+                    id="retencion"
+                    type="number"
+                    min="0"
+                    max="3650"
+                    value="0"
+                    class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                  />
+                </div>
+                <div>
+                  <label for="max-kb" class="block text-xs uppercase tracking-wider text-stone">
+                    Tamaño máximo en KB
+                  </label>
+                  <input
+                    id="max-kb"
+                    type="number"
+                    min="4"
+                    max="512"
+                    value="256"
+                    class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory"
+                  />
+                </div>
+              </div>
+              <p class="mt-3 text-xs leading-relaxed">
+                El token se muestra una sola vez al terminar; guárdalo. Si vuelves a generar una API protegida sin
+                marcar la casilla, se le quita la protección. El archivo de datos no puede pasar de 512 KB.
+              </p>
+            </details>
 
-          <section id="plano" class="rounded-[20px] border border-line p-5">
-            <h2 class="font-display text-2xl">Vista previa</h2>
-            <p class="mt-2 text-sm leading-relaxed text-stone">
-              Mientras escribes, el lector del taller arma las rutas aquí mismo, sin enviar nada a ningún
-              servidor.
-            </p>
-          </section>
+            <details class="mt-3 rounded-xl border border-line bg-ink/60 px-4 py-3.5 text-sm text-stone">
+              <summary class="cursor-pointer select-none font-medium text-ivory">
+                🔑 Clave del taller (opcional · GENERADOR_SECRETO)
+              </summary>
+              <p class="mt-2 leading-relaxed">
+                Si en Vercel definiste la variable <code class="text-ivory">GENERADOR_SECRETO</code>, escribe aquí ese
+                mismo valor. Si no la definiste, déjalo vacío.
+              </p>
+              <input
+                id="secreto"
+                name="secreto"
+                type="password"
+                autocomplete="off"
+                placeholder="Déjalo vacío si no configuraste una"
+                class="mt-3 w-full rounded-xl border border-line bg-ink px-4 py-3 text-ivory placeholder:text-stone/60"
+              />
+            </details>
 
-          <section class="rounded-[20px] border border-line bg-panel p-5 text-sm leading-relaxed text-stone">
-            <h2 class="font-display text-2xl text-ivory">Coste</h2>
-            <p class="mt-3">
-              <span class="text-ivory">Cero.</span> El botón usa GitHub Actions en su capa gratuita; la IA es un
-              servicio público sin clave y, si ninguno responde, se activan las claves gratuitas que hayas
-              configurado (Gemini, Groq, OpenRouter…). Las APIs viven en el plan Hobby de Vercel.
-            </p>
-            <a class="mt-3 inline-block text-clay underline-offset-4 hover:underline" href="/api/salud"
-              >Ver el estado del taller</a
+            <button
+              id="enviar"
+              type="submit"
+              class="boton-brillo mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-semibold disabled:cursor-wait disabled:opacity-60"
             >
-          </section>
-        </aside>
-      </div>
+              <span>🚀 Generar API en la nube</span>
+            </button>
+            <p id="estado" class="mt-4 min-h-6 text-sm leading-relaxed text-stone" role="status" aria-live="polite"></p>
+            <div id="resultado" class="hidden"></div>
+          </form>
 
-      <section class="mt-14">
-        <div class="flex items-end justify-between gap-4">
-          <h2 class="font-display text-3xl">APIs de este taller</h2>
+          <!-- Columna derecha: Visualizador de Esquema en Tiempo Real + Radar IA -->
+          <aside class="flex flex-col gap-5 lg:col-span-5">
+            <section id="plano" class="tarjeta-viva rounded-[24px] p-5 sm:p-6">
+              <h2 class="font-display text-2xl text-ivory">Vista previa</h2>
+              <p class="mt-1.5 text-xs leading-relaxed text-stone">
+                Mientras escribes, el motor del taller dibuja tus tablas, tipos, rutas HTTP y un registro JSON de
+                muestra en tiempo real, sin enviar nada a ningún servidor.
+              </p>
+            </section>
+
+            <!-- Radar en vivo de Proveedores IA -->
+            <section class="tarjeta-viva rounded-[24px] p-5 sm:p-6">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-clay">Cadena de Inteligencia</p>
+                  <h2 class="font-display text-2xl text-ivory">Motores de IA gratuitos</h2>
+                </div>
+                <a
+                  href="/api/proveedores"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="rounded-lg border border-line bg-ink px-2.5 py-1 font-mono text-[11px] text-stone hover:border-clay hover:text-clay"
+                >
+                  /api/proveedores ↗
+                </a>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed text-stone">
+                El taller intenta primero los proveedores públicos que no piden clave y, si ninguno responde, pasa a
+                las claves gratuitas configuradas o al lector determinista incluido.
+              </p>
+              <div id="radar-ia" class="mt-4 space-y-2">
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300">
+                    1. LLM7 (sin clave)
+                  </span>
+                  <span class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300">
+                    2. Kilo Gateway
+                  </span>
+                  <span class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300">
+                    3. OVHcloud AI
+                  </span>
+                  <span class="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300">
+                    4. Pollinations
+                  </span>
+                  <span class="rounded-lg border border-clay/40 bg-clay/10 px-2.5 py-1 font-mono text-[11px] text-clay">
+                    5. Lector incluido
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section id="como-funciona" class="tarjeta-viva rounded-[24px] p-5 sm:p-6">
+              <h2 class="font-display text-2xl text-ivory">Seguridad por diseño</h2>
+              <ul class="mt-3 space-y-2.5 text-xs leading-relaxed text-stone">
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-300">✔</span>
+                  <span>
+                    <strong class="text-ivory">Cero ejecución de código IA:</strong> la IA solo propone un esquema JSON
+                    validado; el motor de rutas está fijo y auditado en el repositorio.
+                  </span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-sky-300">✔</span>
+                  <span>
+                    <strong class="text-ivory">Caché ETag + Índices O(1):</strong> búsquedas sin acentos y lecturas con
+                    <code class="text-ivory">304 Not Modified</code>.
+                  </span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-300">✔</span>
+                  <span>
+                    <strong class="text-ivory">Protección anti-abuso:</strong> verificación CSRF, límite de cuerpo,
+                    cupos por IP y comparación de tokens SHA-256 en tiempo constante.
+                  </span>
+                </li>
+              </ul>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 2 · Consola Interactiva de Pruebas en Vivo (Inspirada en Hoppscotch y Scalar) -->
+      <section id="consola-viva" class="mt-16">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
+              2 · Inspirada en Hoppscotch &amp; Scalar
+            </p>
+            <h2 class="mt-1 font-display text-3xl tracking-tight sm:text-4xl">
+              Consola de Pruebas en Vivo y Generador de Código
+            </h2>
+            <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone">
+              Lanza peticiones reales contra las APIs publicadas en este taller sin salir de la página. Inspecciona
+              el código de estado, la latencia en milisegundos, las cabeceras ETag y copia el código en tu lenguaje
+              favorito.
+            </p>
+          </div>
+        </div>
+
+        <div class="tarjeta-viva mt-5 rounded-[24px] p-5 sm:p-6">
+          <!-- Selector rápido de rutas vivas -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-stone">Rutas listas:</span>
+            <button
+              type="button"
+              data-endpoint="/api/ejemplo-notas/notas"
+              class="boton-endpoint chip-interactivo chip-activo rounded-xl px-3 py-1.5 font-mono text-xs"
+            >
+              GET /api/ejemplo-notas/notas
+            </button>
+            <button
+              type="button"
+              data-endpoint="/api/demo-recetas/recetas"
+              class="boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs text-stone"
+            >
+              GET /api/demo-recetas/recetas
+            </button>
+            <button
+              type="button"
+              data-endpoint="/api/demo-recetas/ingredientes"
+              class="boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs text-stone"
+            >
+              GET /api/demo-recetas/ingredientes
+            </button>
+            <button
+              type="button"
+              data-endpoint="/api/demo-gimnasio/socios"
+              class="boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs text-stone"
+            >
+              GET /api/demo-gimnasio/socios
+            </button>
+            <button
+              type="button"
+              data-endpoint="/api/demo-gimnasio/rutinas"
+              class="boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs text-stone"
+            >
+              GET /api/demo-gimnasio/rutinas
+            </button>
+            <button
+              type="button"
+              data-endpoint="/api/salud"
+              class="boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs text-stone"
+            >
+              GET /api/salud
+            </button>
+          </div>
+
+          <!-- Barra de dirección interactiva -->
+          <div class="mt-4 grid gap-3 sm:grid-cols-12">
+            <div class="flex items-center gap-2 rounded-xl border border-line bg-ink px-3.5 py-2.5 sm:col-span-6">
+              <span class="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                GET
+              </span>
+              <input
+                id="consola-ruta"
+                type="text"
+                value="/api/ejemplo-notas/notas"
+                aria-label="Ruta del endpoint a consultar"
+                spellcheck="false"
+                class="w-full bg-transparent font-mono text-xs text-ivory focus:outline-none sm:text-sm"
+              />
+            </div>
+
+            <div class="sm:col-span-3">
+              <input
+                id="consola-buscar"
+                type="text"
+                placeholder="Filtrar texto (?buscar=…)"
+                aria-label="Filtrar resultados por texto"
+                class="h-full w-full rounded-xl border border-line bg-ink px-3.5 py-2.5 font-mono text-xs text-ivory placeholder:text-stone/60"
+              />
+            </div>
+
+            <div class="flex gap-2 sm:col-span-3">
+              <select
+                id="consola-limite"
+                aria-label="Límite de registros"
+                class=" rounded-xl border border-line bg-ink px-3 py-2.5 font-mono text-xs text-ivory"
+              >
+                <option value="">Sin límite</option>
+                <option value="2">limite=2</option>
+                <option value="5">limite=5</option>
+                <option value="10">limite=10</option>
+              </select>
+              <button
+                type="button"
+                id="consola-ejecutar"
+                class="boton-brillo flex-1 rounded-xl px-4 py-2.5 text-xs font-semibold"
+              >
+                ▶ Enviar
+              </button>
+            </div>
+          </div>
+
+          <!-- Panel doble: Respuesta en vivo + Código multilingüe -->
+          <div class="mt-5 grid gap-5 lg:grid-cols-12">
+            <div class="consola-terminal rounded-2xl p-4 lg:col-span-7">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line/80 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-rose-400/80"></span>
+                  <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
+                  <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
+                  <span class="ml-1 font-mono text-xs text-stone">Respuesta HTTP en vivo</span>
+                </div>
+                <div id="consola-meta" class="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                  <span class="rounded-full border border-line px-2.5 py-0.5 text-stone">Listo para consultar</span>
+                </div>
+              </div>
+              <pre
+                id="consola-salida"
+                class="mt-3 max-h-80 overflow-auto font-mono text-xs leading-relaxed text-emerald-200"
+              >// Pulsa «Enviar» o elige una ruta arriba para ver los datos reales del servidor…</pre>
+            </div>
+
+            <div class="consola-terminal flex flex-col justify-between rounded-2xl p-4 lg:col-span-5">
+              <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line/80 pb-3">
+                  <div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Lenguaje del fragmento de código">
+                    <button
+                      type="button"
+                      data-lenguaje="curl"
+                      class="boton-lenguaje chip-interactivo chip-activo rounded-lg px-2.5 py-1 font-mono text-[11px]"
+                    >
+                      cURL
+                    </button>
+                    <button
+                      type="button"
+                      data-lenguaje="js"
+                      class="boton-lenguaje chip-interactivo rounded-lg px-2.5 py-1 font-mono text-[11px] text-stone"
+                    >
+                      JavaScript
+                    </button>
+                    <button
+                      type="button"
+                      data-lenguaje="python"
+                      class="boton-lenguaje chip-interactivo rounded-lg px-2.5 py-1 font-mono text-[11px] text-stone"
+                    >
+                      Python
+                    </button>
+                    <button
+                      type="button"
+                      data-lenguaje="httpie"
+                      class="boton-lenguaje chip-interactivo rounded-lg px-2.5 py-1 font-mono text-[11px] text-stone"
+                    >
+                      HTTPie
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    id="consola-copiar-codigo"
+                    class="rounded-lg border border-clay/40 bg-clay/10 px-2.5 py-1 font-mono text-[11px] text-clay hover:bg-clay/20"
+                  >
+                    Copiar código
+                  </button>
+                </div>
+                <pre
+                  id="consola-codigo"
+                  class="mt-3 max-h-64 overflow-auto font-mono text-xs leading-relaxed text-ivory"
+                ></pre>
+              </div>
+              <p class="mt-3 border-t border-line/60 pt-3 text-[11px] leading-relaxed text-stone">
+                💡 Todas las APIs responden con CORS abierto (<code class="text-ivory">Access-Control-Allow-Origin: *</code>),
+                ETag y soporte de búsqueda sin acentos mediante <code class="text-ivory">?buscar=</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 · Catálogo de APIs publicadas en este taller -->
+      <section id="apis-publicadas" class="mt-16">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
+              3 · Registro del Repositorio
+            </p>
+            <h2 class="mt-1 font-display text-3xl tracking-tight sm:text-4xl">APIs nacidas en este taller</h2>
+            <p class="mt-2 text-sm text-stone">
+              Todas comparten una sola función dinámica en Vercel para no agotar jamás el límite del plan gratuito.
+              Pulsa <span class="text-ivory">«Probar en consola»</span> en cualquiera para inspeccionarla en vivo.
+            </p>
+          </div>
           <button
             type="button"
             id="recargar"
-            class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline"
+            class="chip-interactivo rounded-xl px-4 py-2 text-xs font-medium text-ivory"
           >
-            Actualizar
+            ↻ Actualizar catálogo
           </button>
         </div>
-        <p class="mt-2 text-sm text-stone">
-          Todas viven bajo la misma dirección, cada una en su ruta. Cada fila enlaza a su API, su documentación
-          y su documento OpenAPI.
-        </p>
-        <div id="lista" class="mt-4 divide-y divide-line border-y border-line"></div>
+        <div id="lista" class="mt-5 grid gap-4 md:grid-cols-3"></div>
       </section>
 
-
-      <section id="fuentes-publicas" class="mt-14">
+      <!-- 4 · Laboratorio de APIs Públicas sin Clave + Catálogo GitHub (public-apis) -->
+      <section id="fuentes-publicas" class="mt-16">
         <div class="flex flex-wrap items-end justify-between gap-4">
-          <h2 class="font-display text-3xl">APIs públicas sin clave</h2>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
+              4 · Conectores Abiertos &amp; public-apis/public-apis
+            </p>
+            <h2 class="mt-1 font-display text-3xl tracking-tight sm:text-4xl">
+              APIs públicas sin clave y normalización en vivo
+            </h2>
+            <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone">
+              El taller conecta tus APIs con servicios abiertos que no piden registro y explora el catálogo comunitario
+              de <span class="text-ivory">public-apis/public-apis</span> (958 APIs con HTTPS y sin clave).
+            </p>
+          </div>
           <button
             type="button"
             id="probar-fuentes"
-            class="text-sm text-stone underline-offset-4 hover:text-ivory hover:underline disabled:cursor-wait disabled:opacity-50"
+            class="boton-brillo rounded-xl px-4 py-2.5 text-xs font-semibold disabled:cursor-wait disabled:opacity-50"
           >
-            Probar ahora
+            ⚡ Medir latencia en vivo
           </button>
         </div>
-        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone">
-          El taller aprovecha servicios públicos que no piden clave ni registro: normaliza países con REST
-          Countries, monedas con Frankfurter y ciudades con Open-Meteo, y reúne un catálogo de APIs gratuitas
-          descubiertas en el repositorio público <span class="text-ivory">public-apis/public-apis</span>. Si una
-          fuente no responde, no pasa nada: el valor se guarda tal cual.
-        </p>
-        <div id="fuentes" class="mt-4"></div>
+
+        <!-- Demostrador visual de normalización automática -->
+        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+          <div class="tarjeta-viva rounded-2xl p-4">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-emerald-300">🌍 Campo «pais»</span>
+              <span class="font-mono text-[11px] text-stone">REST Countries</span>
+            </div>
+            <p class="mt-2 font-mono text-xs text-ivory">
+              "mexico" → <span class="text-emerald-300">"México" (MX)</span>
+            </p>
+            <p class="mt-1 text-[11px] text-stone">Traduce al español y valida el código oficial ISO-3166.</p>
+          </div>
+          <div class="tarjeta-viva rounded-2xl p-4">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-amber-300">💱 Campo «moneda»</span>
+              <span class="font-mono text-[11px] text-stone">Frankfurter · BCE</span>
+            </div>
+            <p class="mt-2 font-mono text-xs text-ivory">
+              "peso mexicano" / "mxn" → <span class="text-amber-300">"MXN"</span>
+            </p>
+            <p class="mt-1 text-[11px] text-stone">Normaliza divisas contra el catálogo del Banco Central Europeo.</p>
+          </div>
+          <div class="tarjeta-viva rounded-2xl p-4">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-sky-300">📍 Campo «ciudad»</span>
+              <span class="font-mono text-[11px] text-stone">Open-Meteo Geo</span>
+            </div>
+            <p class="mt-2 font-mono text-xs text-ivory">
+              "cdmx" → <span class="text-sky-300">"Ciudad de México"</span>
+            </p>
+            <p class="mt-1 text-[11px] text-stone">Geocodifica el nombre canónico; si no hay red, conserva tu texto.</p>
+          </div>
+        </div>
+
+        <!-- Buscador y filtro interactivo de fuentes públicas -->
+        <div class="mt-5 flex flex-col gap-3 rounded-2xl border border-line bg-panel/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-1 items-center gap-2 rounded-xl border border-line bg-ink px-3.5 py-2">
+            <span class="text-stone" aria-hidden="true">🔎</span>
+            <input
+              id="buscar-fuentes"
+              type="search"
+              placeholder="Buscar entre las 958 APIs públicas (ej. weather, anime, crypto, geo, books)…"
+              aria-label="Buscar APIs públicas sin clave"
+              class="w-full bg-transparent text-xs text-ivory placeholder:text-stone/60 focus:outline-none sm:text-sm"
+            />
+          </div>
+          <div id="filtros-fuentes" class="flex flex-wrap gap-1.5 text-xs">
+            <button type="button" data-cat="" class="filtro-fuente chip-interactivo chip-activo rounded-lg px-2.5 py-1.5">
+              Todas
+            </button>
+            <button type="button" data-cat="Clima" class="filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 text-stone">
+              Clima
+            </button>
+            <button type="button" data-cat="Geografía" class="filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 text-stone">
+              Geografía
+            </button>
+            <button type="button" data-cat="Divisas" class="filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 text-stone">
+              Divisas
+            </button>
+            <button type="button" data-cat="Datos de prueba" class="filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 text-stone">
+              Datos de prueba
+            </button>
+            <button type="button" data-cat="Libros" class="filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 text-stone">
+              Libros
+            </button>
+          </div>
+        </div>
+
+        <div id="fuentes" class="mt-5"></div>
       </section>
 
-      <section class="mt-14 rounded-[20px] border border-line bg-panel p-5 sm:p-6">
-        <h2 class="font-display text-2xl">Ejemplos de uso</h2>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <p class="text-sm text-stone">Listar los datos de un recurso</p>
-            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas/notas</pre>
-          </div>
-          <div>
-            <p class="text-sm text-stone">Crear un registro</p>
-            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl -X POST https://TU-SITIO.vercel.app/api/ejemplo-notas/notas \
-  -H "Content-Type: application/json" \
-  -d '{"titulo":"Mi primera nota"}'</pre>
-          </div>
-          <div>
-            <p class="text-sm text-stone">Ver las rutas de una API</p>
-            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas</pre>
-          </div>
-          <div>
-            <p class="text-sm text-stone">Documentación y OpenAPI</p>
-            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl https://TU-SITIO.vercel.app/api/ejemplo-notas/openapi.json</pre>
-            <p class="mt-2 text-xs leading-relaxed text-stone">
-              O abre la vista con <a class="text-clay hover:underline" href="/docs?api=ejemplo-notas">/docs?api=ejemplo-notas</a>.
-            </p>
-          </div>
-          <div>
-            <p class="text-sm text-stone">Guardar cambios necesita una clave</p>
-            <p class="mt-2 text-xs leading-relaxed text-stone">
-              Las lecturas funcionan siempre. Para crear, actualizar o borrar, pega la clave
-              <code class="text-ivory">GITHUB_PAT</code> en Vercel: los datos se guardan como archivos dentro
-              de <code class="text-ivory">data/</code> en tu propio repositorio, sin base de datos de pago. Si
-              generaste la API con token, añade <code class="text-ivory">Authorization: Bearer TU_TOKEN</code>.
-            </p>
-          </div>
-          <div>
-            <p class="text-sm text-stone">Proteger una API con token</p>
-            <pre class="mt-2 overflow-x-auto rounded-xl bg-ink p-4 font-mono text-xs text-ivory">curl -X POST https://TU-SITIO.vercel.app/api/mis-notas/notas \
-  -H "Authorization: Bearer TU_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"titulo":"Una nota privada"}'</pre>
-          </div>
+      <!-- 5 · Inspiración del Ecosistema Open Source de GitHub -->
+      <section id="ecosistema-github" class="mt-16">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
+          5 · ADN de Código Abierto
+        </p>
+        <h2 class="mt-1 font-display text-3xl tracking-tight sm:text-4xl">
+          Repositorios públicos de GitHub que inspiran este taller
+        </h2>
+        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone">
+          Combinamos las mejores ideas de proyectos libres de la comunidad global para que puedas diseñar, documentar
+          y probar APIs completas sin pagar licencias ni servidores.
+        </p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <a
+            href="https://github.com/hoppscotch/hoppscotch"
+            target="_blank"
+            rel="noreferrer"
+            class="tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-4"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-semibold text-emerald-300">hoppscotch/hoppscotch</span>
+                <span class="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-stone">★ 80k+</span>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed text-stone">
+                Inspiró nuestra Consola de Pruebas en Vivo con medición de latencia HTTP y generador de código en 4
+                lenguajes.
+              </p>
+            </div>
+            <span class="mt-3 font-mono text-[11px] text-clay">Explorar repositorio ↗</span>
+          </a>
+
+          <a
+            href="https://github.com/scalar/scalar"
+            target="_blank"
+            rel="noreferrer"
+            class="tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-4"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-semibold text-sky-300">scalar/scalar</span>
+                <span class="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-stone">★ 16k+</span>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed text-stone">
+                Inspiró el explorador interactivo OpenAPI 3.0 en <code class="text-ivory">/docs</code> con esquemas
+                visuales y cliente de lectura integrado.
+              </p>
+            </div>
+            <span class="mt-3 font-mono text-[11px] text-clay">Explorar repositorio ↗</span>
+          </a>
+
+          <a
+            href="https://github.com/pocketbase/pocketbase"
+            target="_blank"
+            rel="noreferrer"
+            class="tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-4"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-semibold text-amber-300">pocketbase/pocketbase</span>
+                <span class="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-stone">★ 61k+</span>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed text-stone">
+                Inspiró el diseñador visual de colecciones, tipos de campo, reglas de validación y manifiestos
+                compactos.
+              </p>
+            </div>
+            <span class="mt-3 font-mono text-[11px] text-clay">Explorar repositorio ↗</span>
+          </a>
+
+          <a
+            href="https://github.com/public-apis/public-apis"
+            target="_blank"
+            rel="noreferrer"
+            class="tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-4"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-semibold text-purple-300">public-apis/public-apis</span>
+                <span class="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-stone">★ 300k+</span>
+              </div>
+              <p class="mt-2 text-xs leading-relaxed text-stone">
+                Alimenta el buscador integrado de 958 APIs gratuitas con HTTPS y sin clave, con respaldo local en el
+                repositorio.
+              </p>
+            </div>
+            <span class="mt-3 font-mono text-[11px] text-clay">Explorar repositorio ↗</span>
+          </a>
         </div>
       </section>
     </main>
 
-    <footer class="border-t border-line">
-      <div class="mx-auto flex max-w-5xl flex-col gap-2 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
-        <p>Hecho con planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre.</p>
+    <footer class="border-t border-line bg-panel/60">
+      <div class="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
         <p>
+          Hecho con planes gratuitos: <span class="text-ivory">GitHub Free</span>,
+          <span class="text-ivory">Vercel Hobby</span> y modelos de IA de acceso libre.
+        </p>
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
-          ·
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/docs">/docs</a>
-          ·
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/fuentes">/api/fuentes</a>
-          ·
+          <span>·</span>
+          <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/proveedores">/api/proveedores</a>
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">/api/salud</a>
-          ·
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
-          ·
+          <span>·</span>
           <a
             class="underline-offset-4 hover:text-ivory hover:underline"
             href="https://github.com/muecojulio/generador-apis-gratuitas#readme"

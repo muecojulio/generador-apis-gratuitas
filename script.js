@@ -1,5 +1,6 @@
-// La página del taller. Todo el trabajo pesado vive en el servidor:
-// aquí solo se lee el formulario, se piden APIs y se informa del resultado.
+// La página viva del taller. Incluye diseñador visual en tiempo real,
+// consola interactiva estilo Hoppscotch/Scalar, telemetría del servidor y
+// explorador filtrable de APIs públicas sin clave.
 
 import { RESERVADOS_API, analizar, huella, proponerNombre, slug } from "./lib/motor.mjs";
 
@@ -23,20 +24,129 @@ const retencionInput = document.querySelector("#retencion");
 const maxKbInput = document.querySelector("#max-kb");
 
 const REPOS = "https://github.com/muecojulio/generador-apis-gratuitas";
-const EJEMPLO = {
-  nombre: "tienda-barrio",
-  texto: [
-    "Tabla productos con campos:",
-    "- nombre (texto, obligatorio, máximo 80)",
-    "- precio (número, obligatorio, mínimo 0)",
-    "- existencias (entero, obligatorio)",
-    "- activo (sí o no)",
-    "",
-    "Tabla categorias con campos nombre y descripcion.",
-    "Quiero listar, crear, actualizar y borrar.",
-    "El precio no puede ser negativo.",
-  ].join("\n"),
-};
+
+const ESCENARIOS = [
+  {
+    id: "tienda-barrio",
+    icono: "🏪",
+    etiqueta: "Comercio",
+    titulo: "Tienda de Barrio",
+    nombre: "tienda-barrio",
+    texto: [
+      "Tabla productos con campos:",
+      "- nombre (texto, obligatorio, máximo 80)",
+      "- precio (número, obligatorio, mínimo 0)",
+      "- existencias (entero, obligatorio)",
+      "- activo (sí o no)",
+      "",
+      "Tabla categorias con campos nombre y descripcion.",
+      "Quiero listar, crear, actualizar y borrar.",
+      "El precio no puede ser negativo.",
+    ].join("\n"),
+  },
+  {
+    id: "atlas-viajes",
+    icono: "🌍",
+    etiqueta: "Normalización",
+    titulo: "Atlas y Divisas",
+    nombre: "atlas-viajes",
+    texto: [
+      "Tabla destinos con campos:",
+      "- nombre (texto, obligatorio, máximo 90)",
+      "- pais (texto, obligatorio, máximo 80)",
+      "- ciudad (texto, obligatorio, máximo 80)",
+      "- moneda (texto, obligatorio, máximo 12)",
+      "- presupuesto-diario (número, obligatorio, mínimo 1)",
+      "- visitado (sí o no)",
+      "",
+      "Tabla bitacoras con campos:",
+      "- destino (texto, obligatorio)",
+      "- fecha (fecha, obligatorio)",
+      "- notas (texto, máximo 400)",
+    ].join("\n"),
+  },
+  {
+    id: "taqueria-sol",
+    icono: "🌮",
+    etiqueta: "Gastronomía",
+    titulo: "Taquería & Pedidos",
+    nombre: "taqueria-sol",
+    texto: [
+      "Tabla platillos con campos:",
+      "- nombre (texto, obligatorio, máximo 70)",
+      "- precio (número, obligatorio, mínimo 1)",
+      "- picante (entero, mínimo 0, máximo 5)",
+      "- vegetariano (sí o no)",
+      "",
+      "Tabla comandas con campos:",
+      "- mesa (entero, obligatorio, mínimo 1)",
+      "- platillo (texto, obligatorio)",
+      "- cantidad (entero, obligatorio, mínimo 1)",
+      "- entregada (sí o no)",
+    ].join("\n"),
+  },
+  {
+    id: "club-atletico",
+    icono: "🏋️",
+    etiqueta: "Deporte",
+    titulo: "Club Deportivo",
+    nombre: "club-atletico",
+    texto: [
+      "Tabla atletas con campos:",
+      "- nombre (texto, obligatorio, máximo 80)",
+      "- correo (email, obligatorio)",
+      "- ciudad (texto, obligatorio)",
+      "- alta (fecha, obligatorio)",
+      "- activo (sí o no)",
+      "",
+      "Tabla entrenamientos con campos:",
+      "- disciplina (texto, obligatorio)",
+      "- duracion-minutos (entero, obligatorio, mínimo 10)",
+      "- intensidad (texto, obligatorio)",
+    ].join("\n"),
+  },
+  {
+    id: "biblioteca-barrio",
+    icono: "📚",
+    etiqueta: "Cultura",
+    titulo: "Biblioteca Abierta",
+    nombre: "biblioteca-barrio",
+    texto: [
+      "Tabla libros con campos:",
+      "- titulo (texto, obligatorio, máximo 120)",
+      "- autor (texto, obligatorio, máximo 90)",
+      "- anio (entero, mínimo 1450, máximo 2030)",
+      "- disponible (sí o no)",
+      "",
+      "Tabla prestamos con campos:",
+      "- libro (texto, obligatorio)",
+      "- lector (email, obligatorio)",
+      "- fecha-entrega (fecha, obligatorio)",
+    ].join("\n"),
+  },
+  {
+    id: "torneo-arcade",
+    icono: "🎮",
+    etiqueta: "Juegos",
+    titulo: "Liga Arcade",
+    nombre: "torneo-arcade",
+    texto: [
+      "Tabla jugadores con campos:",
+      "- alias (texto, obligatorio, máximo 40)",
+      "- pais (texto, obligatorio)",
+      "- puntos-totales (entero, obligatorio, mínimo 0)",
+      "- invicto (sí o no)",
+      "",
+      "Tabla partidas con campos:",
+      "- juego (texto, obligatorio)",
+      "- ganador (texto, obligatorio)",
+      "- puntaje (entero, obligatorio, mínimo 0)",
+      "- fecha (fecha, obligatorio)",
+    ].join("\n"),
+  },
+];
+
+const EJEMPLO = ESCENARIOS[0];
 
 const MOTORES = {
   gemini: "Gemini (capa gratuita)",
@@ -53,6 +163,30 @@ const MOTORES = {
   huggingface: "Hugging Face (clave gratuita)",
   incluido: "lector del taller (sin IA)",
 };
+
+const COLORES_TIPO = {
+  texto: "border-sky-500/40 bg-sky-500/10 text-sky-300",
+  numero: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  entero: "border-orange-500/40 bg-orange-500/10 text-orange-300",
+  booleano: "border-purple-500/40 bg-purple-500/10 text-purple-300",
+  fecha: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  email: "border-pink-500/40 bg-pink-500/10 text-pink-300",
+};
+
+const COLORES_METODO = {
+  GET: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+  POST: "border-sky-500/40 bg-sky-500/15 text-sky-300",
+  PUT: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+  DELETE: "border-rose-500/40 bg-rose-500/15 text-rose-300",
+};
+
+const CAMPOS_MAGICOS = {
+  pais: "🌍 REST Countries",
+  moneda: "💱 Frankfurter BCE",
+  ciudad: "📍 Open-Meteo Geo",
+};
+
+let pestanaPlano = "tablas";
 
 function motorTexto(motor) {
   if (!motor) return "incluido";
@@ -81,7 +215,7 @@ function nombreActual() {
 }
 
 function vaciar(nodo) {
-  while (nodo.firstChild) nodo.removeChild(nodo.firstChild);
+  while (nodo && nodo.firstChild) nodo.removeChild(nodo.firstChild);
 }
 
 function texto(tag, contenido, clase) {
@@ -104,7 +238,7 @@ function enlace(contenido, href, clase, externo) {
 }
 
 function insignia(contenido, clase) {
-  return texto("span", contenido, "rounded-full border px-2 py-0.5 text-[11px] " + (clase || "border-line text-stone"));
+  return texto("span", contenido, "rounded-full border px-2.5 py-0.5 text-[11px] " + (clase || "border-line text-stone"));
 }
 
 function limitesResumen(limites) {
@@ -121,14 +255,153 @@ async function copiar(textoCopiar, nodo, etiqueta) {
   try {
     await navigator.clipboard.writeText(textoCopiar);
     const antes = nodo.textContent;
-    nodo.textContent = "Copiado";
+    nodo.textContent = "✓ Copiado";
     setTimeout(() => (nodo.textContent = etiqueta || antes), 1800);
   } catch {
     nodo.textContent = "No se pudo copiar";
   }
 }
 
-/* Vista previa: el mismo lector que usa el servidor, corriendo en tu navegador. */
+/* 1. Selector de Atmósfera Visual (Temas vivos sin estilos inline) -------- */
+
+const TEMAS = ["tema-fragua", "tema-nebulosa", "tema-bosque"];
+const botonesTema = document.querySelectorAll(".boton-tema");
+
+function aplicarTema(tema) {
+  const elegido = TEMAS.includes(tema) ? tema : "tema-fragua";
+  const raiz = document.documentElement;
+  for (const clase of TEMAS) raiz.classList.remove(clase);
+  raiz.classList.add(elegido);
+  for (const boton of botonesTema) {
+    const activo = boton.getAttribute("data-tema") === elegido;
+    boton.className =
+      "boton-tema rounded-full px-2.5 py-1 font-medium transition-all " +
+      (activo ? "chip-activo" : "text-stone hover:text-ivory");
+  }
+  try {
+    localStorage.setItem("taller:tema", elegido);
+  } catch {
+    /* sin almacenamiento local */
+  }
+}
+
+try {
+  const guardado = localStorage.getItem("taller:tema");
+  if (guardado) aplicarTema(guardado);
+} catch {
+  /* continúa con tema por defecto */
+}
+
+for (const boton of botonesTema) {
+  boton.addEventListener("click", () => aplicarTema(boton.getAttribute("data-tema")));
+}
+
+/* 2. Galería de Escenarios Creativos y Asistente de Bloques --------------- */
+
+const galeriaEscenarios = document.querySelector("#galeria-escenarios");
+
+function cargarEscenario(escenario) {
+  if (!escenario) return;
+  nombreInput.value = escenario.nombre;
+  descripcionInput.value = escenario.texto;
+  refrescarMeta();
+  if (galeriaEscenarios) {
+    for (const tarjeta of galeriaEscenarios.querySelectorAll("[data-escenario]")) {
+      const activo = tarjeta.getAttribute("data-escenario") === escenario.id;
+      tarjeta.className =
+        "flex flex-col justify-between rounded-2xl p-3 text-left transition-all " +
+        (activo ? "tarjeta-destacada" : "tarjeta-viva tarjeta-elevada");
+    }
+  }
+}
+
+function pintarGaleriaEscenarios() {
+  if (!galeriaEscenarios) return;
+  vaciar(galeriaEscenarios);
+  for (const escenario of ESCENARIOS) {
+    const tarjeta = document.createElement("button");
+    tarjeta.type = "button";
+    tarjeta.setAttribute("data-escenario", escenario.id);
+    tarjeta.className = "tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-3 text-left";
+
+    const arriba = document.createElement("div");
+    const filaIcono = document.createElement("div");
+    filaIcono.className = "flex items-center justify-between gap-1";
+    filaIcono.appendChild(texto("span", escenario.icono, "text-lg"));
+    filaIcono.appendChild(
+      texto("span", escenario.etiqueta, "rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-stone")
+    );
+    arriba.appendChild(filaIcono);
+    arriba.appendChild(texto("p", escenario.titulo, "mt-2 text-xs font-semibold text-ivory"));
+    tarjeta.appendChild(arriba);
+
+    tarjeta.appendChild(texto("p", "/api/" + escenario.nombre, "mt-2 font-mono text-[10px] text-clay"));
+    tarjeta.addEventListener("click", () => cargarEscenario(escenario));
+    galeriaEscenarios.appendChild(tarjeta);
+  }
+}
+
+pintarGaleriaEscenarios();
+
+const fragmentosBloques = {
+  tabla: "\n\nTabla nuevos_registros con campos:\n- nombre (texto, obligatorio, máximo 80)\n- activo (sí o no)",
+  texto: "\n- descripcion (texto, obligatorio, máximo 160)",
+  numero: "\n- importe (número, obligatorio, mínimo 0)",
+  fecha: "\n- fecha-registro (fecha, obligatorio)",
+  email: "\n- contacto (email, obligatorio)",
+  pais: "\n- pais (texto, obligatorio, máximo 80)",
+  moneda: "\n- moneda (texto, obligatorio, máximo 10)",
+  ciudad: "\n- ciudad (texto, obligatorio, máximo 80)",
+};
+
+for (const boton of document.querySelectorAll("[data-insertar]")) {
+  boton.addEventListener("click", () => {
+    const tipo = boton.getAttribute("data-insertar");
+    const fragmento = fragmentosBloques[tipo] || "";
+    if (!fragmento) return;
+    if (!descripcionInput.value.trim()) {
+      descripcionInput.value = "Tabla elementos con campos:" + fragmento;
+    } else {
+      descripcionInput.value = descripcionInput.value.replace(/\s*$/, "") + fragmento;
+    }
+    refrescarMeta();
+    descripcionInput.focus();
+  });
+}
+
+/* 3. Estudio Visual del Plano en Tiempo Real (Tablas, Rutas, JSON) -------- */
+
+function valorMuestraCampo(campo) {
+  const nombre = campo.nombre.toLowerCase();
+  if (nombre === "pais") return "México";
+  if (nombre === "moneda") return "MXN";
+  if (nombre === "ciudad") return "Ciudad de México";
+  if (campo.tipo === "email") return "ana@taller.dev";
+  if (campo.tipo === "fecha") return "2026-10-25";
+  if (campo.tipo === "booleano") return true;
+  if (campo.tipo === "entero") return campo.min != null ? Math.max(1, campo.min) : 12;
+  if (campo.tipo === "numero") return campo.min != null ? Math.max(19.5, campo.min) : 49.9;
+  return "Ejemplo de " + campo.nombre;
+}
+
+function construirMuestraJson(diseno) {
+  const recurso = diseno.recursos[0];
+  if (!recurso) return {};
+  const ejemplo = { id: "rec_01j8x9k2" };
+  for (const campo of recurso.campos) {
+    ejemplo[campo.nombre] = valorMuestraCampo(campo);
+  }
+  ejemplo.creado = "2026-10-25T18:30:00.000Z";
+  ejemplo.actualizado = "2026-10-25T18:30:00.000Z";
+  return {
+    recurso: recurso.nombre,
+    ruta: "/api/" + diseno.nombre + "/" + recurso.nombre,
+    ejemploRespuesta: {
+      total: 1,
+      datos: [ejemplo],
+    },
+  };
+}
 
 function dibujarPlano() {
   const titulo = plano.querySelector("h2");
@@ -139,46 +412,191 @@ function dibujarPlano() {
 
   const nombre = nombreActual();
   const descripcion = descripcionInput.value.trim();
-  if (!nombre || descripcion.length < 20) return;
 
-  const diseno = analizar(descripcion, nombre);
-  const bloque = document.createElement("div");
-  bloque.className = "mt-4 space-y-3";
-
-  for (const recurso of diseno.recursos) {
-    const caja = document.createElement("div");
-    caja.appendChild(texto("p", recurso.titulo, "text-sm font-medium text-ivory"));
-    caja.appendChild(
+  if (!nombre || descripcion.length < 20) {
+    const vacio = document.createElement("div");
+    vacio.className = "mt-4 rounded-2xl border border-dashed border-line bg-ink/50 p-5 text-center";
+    vacio.appendChild(texto("p", "🧬 El lienzo de arquitectura está listo", "text-sm font-medium text-ivory"));
+    vacio.appendChild(
       texto(
         "p",
-        recurso.campos
-          .map((campo) => {
-            const marcas = [];
-            if (campo.requerido) marcas.push("obligatorio");
-            if (campo.min != null) marcas.push("min " + campo.min);
-            if (campo.max != null) marcas.push("max " + campo.max);
-            return campo.nombre + (marcas.length ? " (" + marcas.join(", ") + ")" : "");
-          })
-          .join("  ·  "),
-        "mt-1 text-sm leading-relaxed text-stone"
+        "Elige una de las 6 chispas creativas de arriba o escribe al menos 20 caracteres para ver el diagrama de tablas, rutas HTTP y JSON en tiempo real.",
+        "mt-1 text-xs leading-relaxed text-stone"
       )
     );
-    bloque.appendChild(caja);
+    const botonRapido = texto(
+      "button",
+      "⚡ Cargar ejemplo «Atlas y Divisas»",
+      "chip-interactivo mt-3 rounded-xl px-3.5 py-2 text-xs font-medium text-clay"
+    );
+    botonRapido.type = "button";
+    botonRapido.addEventListener("click", () => cargarEscenario(ESCENARIOS[1]));
+    vacio.appendChild(botonRapido);
+    plano.appendChild(vacio);
+    return;
   }
 
-  const rutas = document.createElement("div");
-  rutas.className = "mt-4 space-y-1 border-t border-line pt-3 font-mono text-xs text-stone";
-  for (const recurso of diseno.recursos) {
-    const base = "/api/" + diseno.nombre + "/" + recurso.nombre;
-    rutas.appendChild(texto("p", "GET    " + base));
-    if (!diseno.soloLectura) {
-      rutas.appendChild(texto("p", "POST   " + base));
-      rutas.appendChild(texto("p", "PUT    " + base + "/{id}"));
-      rutas.appendChild(texto("p", "DELETE " + base + "/{id}"));
+  const diseno = analizar(descripcion, nombre);
+  const soloLectura = Boolean(soloLecturaInput && soloLecturaInput.checked) || diseno.soloLectura;
+  const totalCampos = diseno.recursos.reduce((acc, r) => acc + r.campos.length, 0);
+  const totalRutas = diseno.recursos.length * (soloLectura ? 1 : 4);
+  const magicos = [];
+  for (const r of diseno.recursos) {
+    for (const c of r.campos) {
+      if (CAMPOS_MAGICOS[c.nombre] && !magicos.includes(c.nombre)) magicos.push(c.nombre);
     }
   }
-  bloque.appendChild(rutas);
-  plano.appendChild(bloque);
+
+  // Resumen numérico de arquitectura
+  const resumenGrid = document.createElement("div");
+  resumenGrid.className = "mt-4 grid grid-cols-3 gap-2";
+  for (const [etiqueta, valor, tono] of [
+    ["Tablas", String(diseno.recursos.length), "text-ivory"],
+    ["Campos", String(totalCampos), "text-clay"],
+    ["Endpoints", String(totalRutas), "text-emerald-300"],
+  ]) {
+    const celda = document.createElement("div");
+    celda.className = "rounded-xl border border-line bg-ink/80 px-3 py-2 text-center";
+    celda.appendChild(texto("p", valor, "font-display text-xl " + tono));
+    celda.appendChild(texto("p", etiqueta, "text-[10px] uppercase tracking-wider text-stone"));
+    resumenGrid.appendChild(celda);
+  }
+  plano.appendChild(resumenGrid);
+
+  if (magicos.length) {
+    const avisoMagico = document.createElement("div");
+    avisoMagico.className =
+      "mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-200";
+    avisoMagico.textContent =
+      "✨ Enriquecimiento activo: los campos «" +
+      magicos.join(", ") +
+      "» se normalizarán automáticamente con APIs públicas sin clave.";
+    plano.appendChild(avisoMagico);
+  }
+
+  // Selector de pestañas del plano
+  const barraPestanas = document.createElement("div");
+  barraPestanas.className = "mt-4 flex flex-wrap gap-1.5 border-b border-line pb-2.5";
+  for (const [id, nombrePestana] of [
+    ["tablas", "🗂️ Tablas (" + diseno.recursos.length + ")"],
+    ["rutas", "⚡ Rutas (" + totalRutas + ")"],
+    ["json", "🧬 JSON Muestra"],
+  ]) {
+    const b = texto(
+      "button",
+      nombrePestana,
+      "chip-interactivo rounded-lg px-2.5 py-1 text-xs font-medium " +
+        (pestanaPlano === id ? "chip-activo" : "text-stone")
+    );
+    b.type = "button";
+    b.addEventListener("click", () => {
+      pestanaPlano = id;
+      dibujarPlano();
+    });
+    barraPestanas.appendChild(b);
+  }
+  plano.appendChild(barraPestanas);
+
+  const cuerpoPlano = document.createElement("div");
+  cuerpoPlano.className = "mt-3 space-y-3";
+
+  if (pestanaPlano === "tablas") {
+    for (const recurso of diseno.recursos) {
+      const tarjetaTabla = document.createElement("div");
+      tarjetaTabla.className = "rounded-xl border border-line bg-ink/90 p-3.5";
+
+      const cab = document.createElement("div");
+      cab.className = "flex items-center justify-between gap-2 border-b border-line/70 pb-2";
+      cab.appendChild(texto("p", "📦 " + recurso.titulo, "text-sm font-semibold text-ivory"));
+      cab.appendChild(
+        texto("code", "/api/" + diseno.nombre + "/" + recurso.nombre, "font-mono text-[11px] text-clay")
+      );
+      tarjetaTabla.appendChild(cab);
+
+      const listaCampos = document.createElement("div");
+      listaCampos.className = "mt-2.5 space-y-1.5";
+      for (const campo of recurso.campos) {
+        const filaCampo = document.createElement("div");
+        filaCampo.className = "flex flex-wrap items-center justify-between gap-1.5 text-xs";
+
+        const izq = document.createElement("div");
+        izq.className = "flex items-center gap-1.5";
+        izq.appendChild(texto("code", campo.nombre, "font-mono text-ivory"));
+        if (campo.requerido) {
+          izq.appendChild(
+            texto("span", "req", "rounded border border-clay/40 bg-clay/10 px-1.5 py-0.2 text-[10px] text-clay")
+          );
+        }
+        if (CAMPOS_MAGICOS[campo.nombre]) {
+          izq.appendChild(
+            texto(
+              "span",
+              CAMPOS_MAGICOS[campo.nombre],
+              "rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.2 text-[10px] text-emerald-300"
+            )
+          );
+        }
+        filaCampo.appendChild(izq);
+
+        const der = document.createElement("div");
+        der.className = "flex items-center gap-1.5";
+        const reglas = [];
+        if (campo.min != null) reglas.push("≥" + campo.min);
+        if (campo.max != null) reglas.push("≤" + campo.max);
+        if (reglas.length) der.appendChild(texto("span", reglas.join(" "), "font-mono text-[10px] text-stone"));
+        der.appendChild(
+          texto(
+            "span",
+            campo.tipo,
+            "rounded border px-1.5 py-0.5 font-mono text-[10px] uppercase " +
+              (COLORES_TIPO[campo.tipo] || "border-line text-stone")
+          )
+        );
+        filaCampo.appendChild(der);
+        listaCampos.appendChild(filaCampo);
+      }
+      tarjetaTabla.appendChild(listaCampos);
+      cuerpoPlano.appendChild(tarjetaTabla);
+    }
+  } else if (pestanaPlano === "rutas") {
+    const cajaRutas = document.createElement("div");
+    cajaRutas.className = "space-y-1.5 rounded-xl border border-line bg-ink/90 p-3 font-mono text-xs";
+    for (const recurso of diseno.recursos) {
+      const base = "/api/" + diseno.nombre + "/" + recurso.nombre;
+      const metodos = soloLectura
+        ? [["GET", base]]
+        : [
+            ["GET", base],
+            ["POST", base],
+            ["PUT", base + "/{id}"],
+            ["DELETE", base + "/{id}"],
+          ];
+      for (const [m, urlRuta] of metodos) {
+        const fila = document.createElement("div");
+        fila.className = "flex items-center gap-2 py-0.5";
+        fila.appendChild(
+          texto(
+            "span",
+            m,
+            "w-14 rounded border px-1.5 py-0.5 text-center text-[10px] font-bold " + COLORES_METODO[m]
+          )
+        );
+        fila.appendChild(texto("span", urlRuta, "truncate text-ivory"));
+        cajaRutas.appendChild(fila);
+      }
+    }
+    cuerpoPlano.appendChild(cajaRutas);
+  } else {
+    const muestra = construirMuestraJson(diseno);
+    const pre = texto(
+      "pre",
+      JSON.stringify(muestra, null, 2),
+      "max-h-64 overflow-auto rounded-xl border border-line bg-ink/90 p-3 font-mono text-[11px] leading-relaxed text-emerald-200"
+    );
+    cuerpoPlano.appendChild(pre);
+  }
+
+  plano.appendChild(cuerpoPlano);
 }
 
 function refrescarMeta() {
@@ -188,11 +606,221 @@ function refrescarMeta() {
   dibujarPlano();
 }
 
-/* Lista de APIs publicadas */
+/* 4. Telemetría en Vivo (/api/salud y /api/proveedores) ------------------- */
+
+async function cargarTelemetria() {
+  const pulsoEstado = document.querySelector("#pulso-estado");
+  const statApis = document.querySelector("#stat-apis");
+  const statFunciones = document.querySelector("#stat-funciones");
+  const statMotores = document.querySelector("#stat-motores");
+  const radarIa = document.querySelector("#radar-ia");
+
+  try {
+    const [resSalud, resProv] = await Promise.all([
+      fetch("/api/salud", { cache: "no-store" }),
+      fetch("/api/proveedores", { cache: "no-store" }),
+    ]);
+    if (resSalud.ok) {
+      const salud = await resSalud.json();
+      if (pulsoEstado) {
+        pulsoEstado.textContent =
+          "En línea · Caché " +
+          (salud.cache ? salud.cache.entradas : 0) +
+          " entradas · Normalización " +
+          (salud.normalizacion && salud.normalizacion.activa ? "activa" : "lista");
+      }
+      if (statApis && typeof salud.apis === "number") statApis.textContent = String(salud.apis);
+      if (statFunciones && typeof salud.funciones === "number") {
+        statFunciones.textContent = salud.funciones + "/12";
+      }
+      if (statMotores && salud.modelos) {
+        statMotores.textContent =
+          salud.modelos.sinClave + " sin clave · " + salud.modelos.conClaveDisponibles + " con clave";
+      }
+    }
+    if (resProv.ok && radarIa) {
+      const prov = await resProv.json();
+      vaciar(radarIa);
+      const contenedorChips = document.createElement("div");
+      contenedorChips.className = "flex flex-wrap gap-1.5";
+      const listaOrden = (prov.orden || []).slice(0, 6);
+      listaOrden.forEach((id, idx) => {
+        contenedorChips.appendChild(
+          texto(
+            "span",
+            idx + 1 + ". " + motorTexto(id),
+            "rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300"
+          )
+        );
+      });
+      contenedorChips.appendChild(
+        texto(
+          "span",
+          "⚡ Respaldo: Lector incluido",
+          "rounded-lg border border-clay/40 bg-clay/10 px-2.5 py-1 font-mono text-[11px] text-clay"
+        )
+      );
+      radarIa.appendChild(contenedorChips);
+    }
+  } catch {
+    if (pulsoEstado) pulsoEstado.textContent = "Modo local / listo para diseñar";
+  }
+}
+
+/* 5. Consola Interactiva en Vivo y Generador Multilingüe ------------------ */
+
+const consolaRutaInput = document.querySelector("#consola-ruta");
+const consolaBuscarInput = document.querySelector("#consola-buscar");
+const consolaLimiteSelect = document.querySelector("#consola-limite");
+const consolaEjecutarBtn = document.querySelector("#consola-ejecutar");
+const consolaSalida = document.querySelector("#consola-salida");
+const consolaMeta = document.querySelector("#consola-meta");
+const consolaCodigo = document.querySelector("#consola-codigo");
+const consolaCopiarBtn = document.querySelector("#consola-copiar-codigo");
+let lenguajeConsola = "curl";
+
+function urlCompletaConsola() {
+  let baseRuta = (consolaRutaInput && consolaRutaInput.value.trim()) || "/api/ejemplo-notas/notas";
+  if (!baseRuta.startsWith("/")) baseRuta = "/" + baseRuta;
+  const url = new URL(baseRuta, location.origin);
+  const buscar = consolaBuscarInput && consolaBuscarInput.value.trim();
+  const limite = consolaLimiteSelect && consolaLimiteSelect.value.trim();
+  if (buscar) url.searchParams.set("buscar", buscar);
+  if (limite) url.searchParams.set("limite", limite);
+  return url;
+}
+
+function generarFragmentoCodigo(url, lenguaje) {
+  const href = url.href;
+  if (lenguaje === "js") {
+    return [
+      "// JavaScript (fetch nativo en navegador o Node 22)",
+      'const res = await fetch("' + href + '", {',
+      '  headers: { Accept: "application/json" }',
+      "});",
+      "const datos = await res.json();",
+      "console.log(res.status, datos);",
+    ].join("\n");
+  }
+  if (lenguaje === "python") {
+    return [
+      "# Python (requests)",
+      "import requests",
+      "",
+      'respuesta = requests.get("' + href + '", timeout=10)',
+      "print(respuesta.status_code, respuesta.headers.get('ETag'))",
+      "print(respuesta.json())",
+    ].join("\n");
+  }
+  if (lenguaje === "httpie") {
+    return [
+      "# HTTPie CLI",
+      'http GET "' + href + '" Accept:application/json',
+    ].join("\n");
+  }
+  return [
+    "# Terminal cURL",
+    'curl -i -s "' + href + '" \\',
+    '  -H "Accept: application/json"',
+  ].join("\n");
+}
+
+function actualizarCodigoConsola() {
+  if (!consolaCodigo) return;
+  const url = urlCompletaConsola();
+  consolaCodigo.textContent = generarFragmentoCodigo(url, lenguajeConsola);
+}
+
+async function ejecutarConsola(rutaForzada) {
+  if (rutaForzada && consolaRutaInput) {
+    consolaRutaInput.value = rutaForzada;
+    for (const boton of document.querySelectorAll(".boton-endpoint")) {
+      const activo = boton.getAttribute("data-endpoint") === rutaForzada;
+      boton.className =
+        "boton-endpoint chip-interactivo rounded-xl px-3 py-1.5 font-mono text-xs " +
+        (activo ? "chip-activo" : "text-stone");
+    }
+  }
+  actualizarCodigoConsola();
+  if (!consolaSalida || !consolaMeta) return;
+
+  const url = urlCompletaConsola();
+  consolaSalida.textContent = "⏳ Consultando " + url.pathname + url.search + " …";
+  vaciar(consolaMeta);
+  consolaMeta.appendChild(insignia("Consultando…", "border-amber-500/40 text-amber-300"));
+
+  const t0 = performance.now();
+  try {
+    const respuesta = await fetch(url.pathname + url.search, { cache: "no-store" });
+    const ms = Math.max(1, Math.round(performance.now() - t0));
+    const textoRespuesta = await respuesta.text();
+    let formateado = textoRespuesta;
+    let totalRegistros = null;
+    try {
+      const json = JSON.parse(textoRespuesta);
+      formateado = JSON.stringify(json, null, 2);
+      if (Array.isArray(json.datos)) totalRegistros = json.datos.length;
+      else if (Array.isArray(json.apis)) totalRegistros = json.apis.length;
+    } catch {
+      /* texto plano */
+    }
+
+    vaciar(consolaMeta);
+    consolaMeta.appendChild(
+      insignia(
+        "HTTP " + respuesta.status,
+        respuesta.ok
+          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+          : "border-rose-500/40 bg-rose-500/10 text-rose-300"
+      )
+    );
+    consolaMeta.appendChild(insignia(ms + " ms", "border-sky-500/40 text-sky-300"));
+    if (totalRegistros !== null) {
+      consolaMeta.appendChild(insignia(totalRegistros + " ítems", "border-clay/40 text-clay"));
+    }
+    const etag = respuesta.headers.get("etag");
+    if (etag) consolaMeta.appendChild(insignia("ETag " + etag, "border-line text-stone"));
+
+    consolaSalida.textContent = formateado;
+  } catch (error) {
+    vaciar(consolaMeta);
+    consolaMeta.appendChild(insignia("Error de red", "border-rose-500/40 text-rose-300"));
+    consolaSalida.textContent = "// No se pudo consultar: " + (error.message || error);
+  }
+}
+
+for (const boton of document.querySelectorAll(".boton-endpoint")) {
+  boton.addEventListener("click", () => ejecutarConsola(boton.getAttribute("data-endpoint")));
+}
+
+for (const boton of document.querySelectorAll(".boton-lenguaje")) {
+  boton.addEventListener("click", () => {
+    lenguajeConsola = boton.getAttribute("data-lenguaje") || "curl";
+    for (const otro of document.querySelectorAll(".boton-lenguaje")) {
+      const activo = otro === boton;
+      otro.className =
+        "boton-lenguaje chip-interactivo rounded-lg px-2.5 py-1 font-mono text-[11px] " +
+        (activo ? "chip-activo" : "text-stone");
+    }
+    actualizarCodigoConsola();
+  });
+}
+
+if (consolaEjecutarBtn) consolaEjecutarBtn.addEventListener("click", () => ejecutarConsola());
+if (consolaRutaInput) consolaRutaInput.addEventListener("input", actualizarCodigoConsola);
+if (consolaBuscarInput) consolaBuscarInput.addEventListener("input", actualizarCodigoConsola);
+if (consolaLimiteSelect) consolaLimiteSelect.addEventListener("change", () => ejecutarConsola());
+if (consolaCopiarBtn) {
+  consolaCopiarBtn.addEventListener("click", () =>
+    copiar(consolaCodigo ? consolaCodigo.textContent : "", consolaCopiarBtn, "Copiar código")
+  );
+}
+
+/* 6. Catálogo de APIs Publicadas (#lista) --------------------------------- */
 
 async function cargarLista() {
   vaciar(lista);
-  lista.appendChild(texto("p", "Cargando…", "py-4 text-sm text-stone"));
+  lista.appendChild(texto("p", "Cargando catálogo de APIs…", "py-4 text-sm text-stone"));
   let apis = [];
   let fallo = null;
   try {
@@ -201,17 +829,16 @@ async function cargarLista() {
     const json = await respuesta.json();
     apis = Array.isArray(json.apis) ? json.apis : [];
   } catch (error) {
-    // Antes un fallo de red se disfrazaba de «no hay APIs». Mejor decirlo.
     fallo = error;
   }
   vaciar(lista);
   if (fallo) {
     const caja = document.createElement("div");
-    caja.className = "py-4 text-sm text-stone";
+    caja.className = "tarjeta-viva col-span-full rounded-2xl p-5 text-sm text-stone";
     caja.appendChild(texto("p", "No pude leer la lista de APIs (" + (fallo.message || fallo) + ").", ""));
     const reintentar = document.createElement("button");
     reintentar.type = "button";
-    reintentar.className = "mt-2 text-clay underline-offset-4 hover:underline";
+    reintentar.className = "mt-3 text-clay underline-offset-4 hover:underline";
     reintentar.textContent = "Reintentar";
     reintentar.addEventListener("click", cargarLista);
     caja.appendChild(reintentar);
@@ -220,29 +847,59 @@ async function cargarLista() {
   }
   if (!apis.length) {
     lista.appendChild(
-      texto("p", "Todavía no hay APIs publicadas. Escribe arriba la primera.", "py-4 text-sm text-stone")
+      texto(
+        "p",
+        "Todavía no hay APIs publicadas. Escribe arriba la primera.",
+        "col-span-full py-4 text-sm text-stone"
+      )
     );
     return;
   }
-  for (const api of apis) {
-    const fila = document.createElement("div");
-    fila.className = "flex flex-col gap-2 py-4 sm:flex-row sm:items-start sm:justify-between";
 
-    const izquierda = document.createElement("div");
-    izquierda.appendChild(
+  for (const api of apis) {
+    const tarjeta = document.createElement("article");
+    tarjeta.className = "tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-5";
+
+    const superior = document.createElement("div");
+    const cabecera = document.createElement("div");
+    cabecera.className = "flex items-start justify-between gap-2";
+    cabecera.appendChild(
       enlace(
         api.titulo || api.nombre,
         api.ruta || "/api/" + api.nombre,
-        "font-medium text-ivory underline-offset-4 hover:text-clay hover:underline"
+        "font-display text-xl text-ivory underline-offset-4 hover:text-clay hover:underline"
       )
     );
-    const meta = document.createElement("p");
-    meta.className = "mt-1 font-mono text-xs text-stone";
-    meta.textContent = (api.ruta || "/api/" + api.nombre) + "  ·  " + motorTexto(api.motor);
-    izquierda.appendChild(meta);
+    cabecera.appendChild(insignia(motorTexto(api.motor), "border-clay/40 text-clay"));
+    superior.appendChild(cabecera);
+
+    superior.appendChild(
+      texto("p", api.ruta || "/api/" + api.nombre, "mt-1 font-mono text-xs text-emerald-300")
+    );
+
+    if (api.resumen) {
+      superior.appendChild(texto("p", api.resumen, "mt-2 text-xs leading-relaxed text-stone"));
+    }
+
+    if (Array.isArray(api.recursos) && api.recursos.length) {
+      const recursosBox = document.createElement("div");
+      recursosBox.className = "mt-3 flex flex-wrap gap-1.5";
+      for (const rec of api.recursos) {
+        const nombreRec = typeof rec === "string" ? rec : rec.nombre;
+        if (!nombreRec) continue;
+        recursosBox.appendChild(
+          texto(
+            "span",
+            "📦 " + nombreRec,
+            "rounded-lg border border-line bg-ink/80 px-2 py-0.5 font-mono text-[11px] text-ivory"
+          )
+        );
+      }
+      superior.appendChild(recursosBox);
+    }
 
     const marcas = document.createElement("div");
-    marcas.className = "mt-2 flex flex-wrap gap-2";
+    marcas.className = "mt-3 flex flex-wrap gap-1.5";
     if (api.soloLectura) marcas.appendChild(insignia("solo lectura", "border-amber-500/40 text-amber-300"));
     if (api.protegida) {
       marcas.appendChild(
@@ -250,29 +907,62 @@ async function cargarLista() {
       );
     }
     if (api.limites) {
-      marcas.appendChild(insignia(api.limites.maxRegistrosPorRecurso + " regs · " + Math.round(api.limites.maxBytes / 1024) + " KB"));
+      marcas.appendChild(
+        insignia(api.limites.maxRegistrosPorRecurso + " regs · " + Math.round(api.limites.maxBytes / 1024) + " KB")
+      );
     }
-    if (marcas.childNodes.length) izquierda.appendChild(marcas);
+    if (marcas.childNodes.length) superior.appendChild(marcas);
+    tarjeta.appendChild(superior);
 
-    const derecha = document.createElement("div");
-    derecha.className = "flex flex-wrap items-center gap-3 text-xs";
-    derecha.appendChild(
-      enlace("Documentación", api.documentacion || "/docs?api=" + encodeURIComponent(api.nombre), "text-clay hover:underline")
-    );
-    derecha.appendChild(
-      enlace("openapi.json", api.openapi || "/api/" + api.nombre + "/openapi.json", "text-stone hover:text-ivory", true)
-    );
-    derecha.appendChild(
-      enlace("Abrir API", api.ruta || "/api/" + api.nombre, "text-stone hover:text-ivory", true)
-    );
+    const inferior = document.createElement("div");
+    inferior.className = "mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line/80 pt-3 text-xs";
 
-    fila.appendChild(izquierda);
-    fila.appendChild(derecha);
-    lista.appendChild(fila);
+    const enlacesIzq = document.createElement("div");
+    enlacesIzq.className = "flex flex-wrap items-center gap-3";
+    enlacesIzq.appendChild(
+      enlace(
+        "Documentación",
+        api.documentacion || "/docs?api=" + encodeURIComponent(api.nombre),
+        "font-medium text-clay hover:underline"
+      )
+    );
+    enlacesIzq.appendChild(
+      enlace(
+        "openapi.json",
+        api.openapi || "/api/" + api.nombre + "/openapi.json",
+        "text-stone hover:text-ivory",
+        true
+      )
+    );
+    inferior.appendChild(enlacesIzq);
+
+    const primerRecurso =
+      Array.isArray(api.recursos) && api.recursos.length
+        ? typeof api.recursos[0] === "string"
+          ? api.recursos[0]
+          : api.recursos[0].nombre
+        : "";
+    const rutaPrueba = primerRecurso ? "/api/" + api.nombre + "/" + primerRecurso : "/api/" + api.nombre;
+
+    const botonProbar = texto(
+      "button",
+      "⚡ Probar en consola",
+      "chip-interactivo rounded-lg px-2.5 py-1 font-mono text-[11px] text-ivory"
+    );
+    botonProbar.type = "button";
+    botonProbar.addEventListener("click", () => {
+      const seccionConsola = document.querySelector("#consola-viva");
+      if (seccionConsola) seccionConsola.scrollIntoView({ behavior: "smooth", block: "start" });
+      ejecutarConsola(rutaPrueba);
+    });
+    inferior.appendChild(botonProbar);
+
+    tarjeta.appendChild(inferior);
+    lista.appendChild(tarjeta);
   }
 }
 
-/* Opciones: solo lectura, límites y token -------------------------------- */
+/* 7. Opciones, generación y espera de publicación ------------------------- */
 
 function numeroCampo(entrada, defecto, minimo, maximo) {
   const valor = Number(entrada.value);
@@ -350,8 +1040,6 @@ async function pedirApi(payload) {
   return json;
 }
 
-/* Espera a que Vercel publique la API */
-
 async function esperarPublicacion(nombre, marca) {
   const inicio = Date.now();
   let fallo = "";
@@ -371,7 +1059,8 @@ async function esperarPublicacion(nombre, marca) {
           break;
         }
         if (corrida && (corrida.estado === "queued" || corrida.estado === "in_progress")) {
-          estado.textContent = "La carpeta se está escribiendo en GitHub… (motor: " + (avisoMotor || "por decidir") + ")";
+          estado.textContent =
+            "La carpeta se está escribiendo en GitHub… (motor: " + (avisoMotor || "por decidir") + ")";
         }
         if (json.publicada) {
           estado.textContent = "Carpeta lista. Vercel está publicando la función…";
@@ -403,26 +1092,27 @@ async function esperarPublicacion(nombre, marca) {
   throw error;
 }
 
-/* Resultado con instrucciones listas para copiar */
-
 function mostrarResultado(nombre, manifiesto, extras) {
   const caja = resultado;
   extras = extras || {};
   vaciar(caja);
-  caja.className = "mt-5 rounded-xl border border-line bg-ink p-4";
+  caja.className = "tarjeta-destacada mt-5 rounded-2xl p-5";
   const enlaceApi = location.origin + "/api/" + nombre;
 
   manifiesto = manifiesto || {};
   caja.appendChild(
     texto(
       "p",
-      extras.pendiente
-        ? "Publicando. Guarda el token que aparece abajo."
-        : "¡Lista! Tu API ya responde.",
-      "font-medium text-ivory"
+      extras.pendiente ? "⏳ Publicando tu API. Guarda el token abajo." : "🎉 ¡Lista! Tu API ya responde en la nube.",
+      "font-display text-xl text-ivory"
     )
   );
-  const ancla = enlace(enlaceApi, "/api/" + nombre, "mt-1 block break-all font-mono text-xs text-clay underline-offset-4 hover:underline", true);
+  const ancla = enlace(
+    enlaceApi,
+    "/api/" + nombre,
+    "mt-1 block break-all font-mono text-xs text-clay underline-offset-4 hover:underline",
+    true
+  );
   caja.appendChild(ancla);
 
   if (extras.pendiente) {
@@ -443,9 +1133,9 @@ function mostrarResultado(nombre, manifiesto, extras) {
   documentos.className = "mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs";
   documentos.appendChild(
     enlace(
-      "Documentación",
+      "📖 Abrir Documentación",
       manifiesto.documentacion || "/docs?api=" + encodeURIComponent(nombre),
-      "text-clay underline-offset-4 hover:underline"
+      "font-medium text-clay underline-offset-4 hover:underline"
     )
   );
   documentos.appendChild(
@@ -460,9 +1150,9 @@ function mostrarResultado(nombre, manifiesto, extras) {
 
   if (extras.token) {
     const cajaToken = document.createElement("div");
-    cajaToken.className = "mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4";
+    cajaToken.className = "mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4";
     cajaToken.appendChild(
-      texto("p", "Guarda este token ahora. No se puede recuperar.", "text-sm font-medium text-amber-200")
+      texto("p", "🔐 Guarda este token ahora. No se puede recuperar.", "text-sm font-medium text-amber-200")
     );
     const codigo = texto("code", extras.token, "mt-2 block break-all font-mono text-xs text-ivory");
     cajaToken.appendChild(codigo);
@@ -492,7 +1182,7 @@ function mostrarResultado(nombre, manifiesto, extras) {
       texto(
         "p",
         "Normaliza con APIs públicas: " + manifiesto.normalizacion.campos.join(", ") + ".",
-        "mt-1 text-xs text-stone"
+        "mt-1 text-xs text-emerald-300"
       )
     );
   }
@@ -510,7 +1200,9 @@ function mostrarResultado(nombre, manifiesto, extras) {
     const rutas = document.createElement("div");
     rutas.className = "mt-3 space-y-1 border-t border-line pt-3 font-mono text-xs text-stone";
     for (const rutaApi of manifiesto.rutas.slice(0, 14)) rutas.appendChild(texto("p", rutaApi));
-    if (manifiesto.rutas.length > 14) rutas.appendChild(texto("p", "… y " + (manifiesto.rutas.length - 14) + " más"));
+    if (manifiesto.rutas.length > 14) {
+      rutas.appendChild(texto("p", "… y " + (manifiesto.rutas.length - 14) + " más"));
+    }
     caja.appendChild(rutas);
 
     const primerRecurso = (manifiesto.recursos && manifiesto.recursos[0] && manifiesto.recursos[0].nombre) || "";
@@ -531,8 +1223,6 @@ function mostrarResultado(nombre, manifiesto, extras) {
   caja.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-/* Envío del formulario principal */
-
 forma.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   const descripcion = descripcionInput.value.trim().slice(0, 8000);
@@ -544,7 +1234,8 @@ forma.addEventListener("submit", async (evento) => {
     return;
   }
   if (!nombreValido(nombre)) {
-    estado.textContent = "Ese nombre no vale: usa letras minúsculas, números y guiones (2 a 48) y evita rutas internas como docs o generar.";
+    estado.textContent =
+      "Ese nombre no vale: usa letras minúsculas, números y guiones (2 a 48) y evita rutas internas como docs o generar.";
     return;
   }
 
@@ -592,52 +1283,77 @@ forma.addEventListener("submit", async (evento) => {
 });
 
 document.querySelector("#ejemplo").addEventListener("click", () => {
-  nombreInput.value = EJEMPLO.nombre;
-  descripcionInput.value = EJEMPLO.texto;
-  refrescarMeta();
+  cargarEscenario(EJEMPLO);
   descripcionInput.focus();
 });
+
+const sorprendemeBtn = document.querySelector("#sorprendeme");
+if (sorprendemeBtn) {
+  let ultimoIndice = 0;
+  sorprendemeBtn.addEventListener("click", () => {
+    ultimoIndice = (ultimoIndice + 1 + Math.floor(Math.random() * (ESCENARIOS.length - 1))) % ESCENARIOS.length;
+    cargarEscenario(ESCENARIOS[ultimoIndice]);
+  });
+}
 
 document.querySelector("#recargar").addEventListener("click", cargarLista);
 nombreInput.addEventListener("input", refrescarMeta);
 descripcionInput.addEventListener("input", refrescarMeta);
+if (soloLecturaInput) soloLecturaInput.addEventListener("change", refrescarMeta);
 
 conTokenInput.addEventListener("change", () => {
   tokenModoInput.disabled = !conTokenInput.checked;
 });
 tokenModoInput.disabled = !conTokenInput.checked;
 
-refrescarMeta();
-cargarLista();
-
-
-/* APIs públicas sin clave (fuentes del taller) ---------------------------- */
+/* 8. Explorador de APIs Públicas sin Clave (#fuentes-publicas) ------------ */
 
 const fuentesCaja = document.querySelector("#fuentes");
 const probarFuentesBoton = document.querySelector("#probar-fuentes");
+const buscarFuentesInput = document.querySelector("#buscar-fuentes");
+const filtrosFuentes = document.querySelectorAll(".filtro-fuente");
+
+let categoriaFuenteActiva = "";
+let temporizadorBusquedaFuentes = null;
 
 function tarjetaFuente(fuente, prueba) {
   const tarjeta = document.createElement("article");
-  tarjeta.className = "rounded-xl border border-line bg-ink p-4";
+  tarjeta.className = "tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-2xl p-4";
 
+  const arriba = document.createElement("div");
   const cabecera = document.createElement("div");
   cabecera.className = "flex flex-wrap items-center justify-between gap-2";
-  cabecera.appendChild(texto("p", fuente.nombre, "text-sm font-medium text-ivory"));
+  cabecera.appendChild(texto("p", fuente.nombre, "text-sm font-semibold text-ivory"));
   cabecera.appendChild(insignia(fuente.categoria || "Varias", "border-clay/40 text-clay"));
-  tarjeta.appendChild(cabecera);
+  arriba.appendChild(cabecera);
 
-  tarjeta.appendChild(texto("p", fuente.descripcion || "", "mt-2 text-xs leading-relaxed text-stone"));
+  arriba.appendChild(texto("p", fuente.descripcion || "", "mt-2 text-xs leading-relaxed text-stone"));
+
+  if (Array.isArray(fuente.usos) && fuente.usos.length) {
+    const usos = document.createElement("p");
+    usos.className = "mt-2 font-mono text-[11px] text-emerald-300";
+    usos.textContent = "✨ Normaliza el campo: " + fuente.usos.join(", ");
+    arriba.appendChild(usos);
+  }
+  tarjeta.appendChild(arriba);
 
   const pie = document.createElement("div");
-  pie.className = "mt-3 flex flex-wrap items-center gap-3 text-xs";
-  pie.appendChild(enlace("Probar", fuente.ejemplo, "text-stone hover:text-ivory", true));
-  if (fuente.docs) pie.appendChild(enlace("Docs", fuente.docs, "text-stone hover:text-ivory", true));
-  if (fuente.github) pie.appendChild(enlace("GitHub", fuente.github, "text-stone hover:text-ivory", true));
+  pie.className = "mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-2.5 text-xs";
+
+  const enlaces = document.createElement("div");
+  enlaces.className = "flex flex-wrap items-center gap-3";
+  enlaces.appendChild(enlace("Probar JSON ↗", fuente.ejemplo, "font-medium text-clay hover:underline", true));
+  if (fuente.docs) enlaces.appendChild(enlace("Docs", fuente.docs, "text-stone hover:text-ivory", true));
+  if (fuente.github) enlaces.appendChild(enlace("GitHub", fuente.github, "text-stone hover:text-ivory", true));
+  pie.appendChild(enlaces);
+
   if (prueba) {
     pie.appendChild(
       insignia(
-        prueba.ok ? "responde · " + prueba.ms + " ms" : "sin respuesta" + (prueba.estado ? " · HTTP " + prueba.estado : ""),
-        prueba.ok ? "border-emerald-500/40 text-emerald-300" : "border-amber-500/40 text-amber-300"
+        prueba.ok
+          ? "● " + prueba.ms + " ms"
+          : "sin respuesta" + (prueba.estado ? " · HTTP " + prueba.estado : ""),
+        prueba.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-amber-500/40 text-amber-300"
       )
     );
   }
@@ -648,93 +1364,170 @@ function tarjetaFuente(fuente, prueba) {
 async function cargarFuentes(opciones) {
   if (!fuentesCaja) return;
   const probar = Boolean(opciones && opciones.probar);
+  const buscar = (buscarFuentesInput && buscarFuentesInput.value.trim()) || "";
+  const categoria = categoriaFuenteActiva;
+
   vaciar(fuentesCaja);
-  fuentesCaja.appendChild(texto("p", probar ? "Probando las fuentes públicas…" : "Cargando fuentes públicas…", "text-sm text-stone"));
+  fuentesCaja.appendChild(
+    texto(
+      "p",
+      probar ? "⚡ Probando latencia en vivo de las fuentes públicas…" : "Cargando catálogo de fuentes públicas…",
+      "text-sm text-stone"
+    )
+  );
+
+  const params = new URLSearchParams({
+    limite: "10",
+    githubLimite: "18",
+  });
+  if (buscar) params.set("buscar", buscar);
+  if (categoria) params.set("categoria", categoria);
+  if (probar) params.set("probar", "1");
+
   let json = null;
   try {
-    const respuesta = await fetch("/api/fuentes?limite=6&githubLimite=6" + (probar ? "&probar=1" : ""), {
+    const respuesta = await fetch("/api/fuentes?" + params.toString(), {
       cache: "no-store",
     });
     json = await respuesta.json();
     if (!respuesta.ok) throw new Error(json.error || "No pude leer las fuentes.");
   } catch (error) {
     vaciar(fuentesCaja);
-    fuentesCaja.appendChild(texto("p", "No pude cargar las fuentes públicas: " + (error.message || error), "text-sm text-stone"));
+    fuentesCaja.appendChild(
+      texto("p", "No pude cargar las fuentes públicas: " + (error.message || error), "text-sm text-stone")
+    );
     return;
   }
 
   vaciar(fuentesCaja);
   const pruebas = new Map((json.prueba || []).map((item) => [item.id, item]));
-  const rejilla = document.createElement("div");
-  rejilla.className = "grid gap-3 sm:grid-cols-2";
-  for (const fuente of json.fuentes || []) rejilla.appendChild(tarjetaFuente(fuente, pruebas.get(fuente.id)));
-  fuentesCaja.appendChild(rejilla);
+  const fuentesCuradas = json.fuentes || [];
 
-  const campos = (json.enriquecimiento && json.enriquecimiento.campos) || [];
-  if (campos.length) {
-    fuentesCaja.appendChild(
-      texto(
-        "p",
-        "El taller usa estas fuentes para normalizar los campos " + campos.join(", ") + " al guardar un registro. Si una fuente no responde, el valor se guarda tal cual.",
-        "mt-3 text-xs leading-relaxed text-stone"
-      )
-    );
+  if (fuentesCuradas.length) {
+    const rejilla = document.createElement("div");
+    rejilla.className = "grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3";
+    for (const fuente of fuentesCuradas) rejilla.appendChild(tarjetaFuente(fuente, pruebas.get(fuente.id)));
+    fuentesCaja.appendChild(rejilla);
   }
 
   if (json.github) {
     const bloque = document.createElement("div");
-    bloque.className = "mt-4 rounded-xl border border-line p-4";
+    bloque.className = "tarjeta-viva mt-5 rounded-2xl p-5";
+
     const titulo = document.createElement("div");
     titulo.className = "flex flex-wrap items-center justify-between gap-2";
-    titulo.appendChild(texto("p", "Descubiertas en GitHub", "text-sm font-medium text-ivory"));
-    titulo.appendChild(insignia((json.github.total || 0) + " sin clave", "border-emerald-500/40 text-emerald-300"));
+    titulo.appendChild(
+      texto("h3", "🌐 Descubiertas en GitHub (public-apis/public-apis)", "font-display text-xl text-ivory")
+    );
+    const insigniasDerecha = document.createElement("div");
+    insigniasDerecha.className = "flex flex-wrap items-center gap-2";
+    insigniasDerecha.appendChild(
+      insignia(
+        (json.github.totalCoincidencias != null ? json.github.totalCoincidencias : json.github.total || 0) +
+          " coincidencias de " +
+          (json.github.total || 0) +
+          " sin clave",
+        "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+      )
+    );
+    titulo.appendChild(insigniasDerecha);
     bloque.appendChild(titulo);
+
     bloque.appendChild(
       texto(
         "p",
-        "Catálogo de public-apis (licencia MIT) filtrado a las APIs que no piden clave y usan HTTPS. Se lee una vez al día y hay una copia local por si GitHub no responde.",
-        "mt-2 text-xs leading-relaxed text-stone"
+        "Catálogo comunitario bajo licencia MIT filtrado a las APIs que no piden clave y usan HTTPS. Respaldado localmente en catalogos/fuentes-publicas.json.",
+        "mt-1.5 text-xs leading-relaxed text-stone"
       )
     );
+
     if (json.github.fuentes && json.github.fuentes.length) {
-      const listaGithub = document.createElement("ul");
-      listaGithub.className = "mt-3 space-y-1 text-xs text-stone";
+      const listaGithub = document.createElement("div");
+      listaGithub.className = "mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3";
       for (const fuente of json.github.fuentes) {
-        const fila = document.createElement("li");
-        fila.appendChild(enlace(fuente.nombre, fuente.url, "text-clay hover:underline", true));
-        fila.appendChild(document.createTextNode(" · " + (fuente.categoriaEs || fuente.categoria || "")));
-        listaGithub.appendChild(fila);
+        const item = document.createElement("a");
+        item.href = fuente.url;
+        item.target = "_blank";
+        item.rel = "noreferrer";
+        item.className =
+          "flex flex-col justify-between rounded-xl border border-line bg-ink/80 p-3 transition-colors hover:border-clay";
+
+        const cabItem = document.createElement("div");
+        cabItem.className = "flex items-start justify-between gap-2";
+        cabItem.appendChild(texto("span", fuente.nombre, "text-xs font-semibold text-clay"));
+        cabItem.appendChild(
+          texto(
+            "span",
+            fuente.categoriaEs || fuente.categoria || "",
+            "rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-stone"
+          )
+        );
+        item.appendChild(cabItem);
+
+        if (fuente.descripcion) {
+          item.appendChild(texto("p", fuente.descripcion, "mt-1.5 line-clamp-2 text-[11px] text-stone"));
+        }
+        listaGithub.appendChild(item);
       }
       bloque.appendChild(listaGithub);
+    } else {
+      bloque.appendChild(
+        texto("p", "No hay coincidencias con ese filtro. Prueba otra palabra o categoría.", "mt-3 text-xs text-stone")
+      );
     }
-    bloque.appendChild(
+
+    const pieGithub = document.createElement("div");
+    pieGithub.className = "mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line/70 pt-3 text-xs";
+    pieGithub.appendChild(
       enlace(
-        "Ver el catálogo completo",
+        "Ver JSON completo (/api/fuentes?githubLimite=200) ↗",
         "/api/fuentes?githubLimite=200",
-        "mt-3 inline-block text-xs text-clay hover:underline",
+        "font-mono text-clay hover:underline",
         true
       )
     );
+    pieGithub.appendChild(
+      enlace("Política de Privacidad", "/privacidad", "text-stone hover:text-ivory")
+    );
+    bloque.appendChild(pieGithub);
     fuentesCaja.appendChild(bloque);
   }
+}
 
-  const nota = document.createElement("p");
-  nota.className = "mt-3 text-xs leading-relaxed text-stone";
-  nota.appendChild(document.createTextNode("Catálogo en "));
-  nota.appendChild(enlace("/api/fuentes", "/api/fuentes", "text-clay hover:underline", true));
-  nota.appendChild(document.createTextNode(" · Sin clave, sin registro y sin datos personales. "));
-  nota.appendChild(enlace("Privacidad", "/privacidad", "text-clay hover:underline"));
-  fuentesCaja.appendChild(nota);
+for (const boton of filtrosFuentes) {
+  boton.addEventListener("click", () => {
+    categoriaFuenteActiva = boton.getAttribute("data-cat") || "";
+    for (const otro of filtrosFuentes) {
+      const activo = otro === boton;
+      otro.className =
+        "filtro-fuente chip-interactivo rounded-lg px-2.5 py-1.5 " + (activo ? "chip-activo" : "text-stone");
+    }
+    cargarFuentes();
+  });
+}
+
+if (buscarFuentesInput) {
+  buscarFuentesInput.addEventListener("input", () => {
+    clearTimeout(temporizadorBusquedaFuentes);
+    temporizadorBusquedaFuentes = setTimeout(() => cargarFuentes(), 220);
+  });
 }
 
 if (probarFuentesBoton) {
   probarFuentesBoton.addEventListener("click", async () => {
     probarFuentesBoton.disabled = true;
-    probarFuentesBoton.textContent = "Probando…";
+    probarFuentesBoton.textContent = "⏳ Midiendo…";
     await cargarFuentes({ probar: true });
-    probarFuentesBoton.textContent = "Probar ahora";
+    probarFuentesBoton.textContent = "⚡ Medir latencia en vivo";
     setTimeout(() => (probarFuentesBoton.disabled = false), 60000);
   });
 }
 
+/* Inicialización con escenario vivo para que nunca luzca vacío ----------- */
+
+cargarEscenario(ESCENARIOS[0]);
+cargarTelemetria();
+cargarLista();
+actualizarCodigoConsola();
+ejecutarConsola("/api/ejemplo-notas/notas");
 if (fuentesCaja) cargarFuentes();

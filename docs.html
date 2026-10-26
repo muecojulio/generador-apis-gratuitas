@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="tema-fragua">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Documentación — Taller de APIs gratuitas</title>
+    <title>Explorador OpenAPI — Taller Vivo de APIs</title>
     <meta
       name="description"
-      content="Documentación automática OpenAPI de cada API publicada en el Taller de APIs gratuitas."
+      content="Documentación interactiva OpenAPI 3.0 de cada API publicada en el Taller Vivo de APIs gratuitas."
     />
-    <meta name="theme-color" content="#121410" />
+    <meta name="theme-color" content="#0e100d" />
     <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Taller — crea tu API gratis, para siempre" />
+    <meta property="og:title" content="Explorador OpenAPI — Taller Vivo de APIs" />
     <meta
       property="og:description"
-      content="Describe tu API en español y el taller la publica en la nube usando solo planes gratuitos: GitHub Free, Vercel Hobby y modelos de IA de acceso libre."
+      content="Explora esquemas, prueba peticiones GET en vivo y copia ejemplos en cURL, JavaScript y Python."
     />
     <meta property="og:locale" content="es_ES" />
     <meta name="twitter:card" content="summary" />
@@ -24,50 +24,88 @@
     <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen bg-ink font-sans text-ivory antialiased">
-    <header class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5">
-      <a href="/" class="flex items-center gap-3">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
-          <circle cx="14" cy="11" r="4.5" fill="#d4784a" />
-          <path d="M3 20.5h22" stroke="#f3f0e8" stroke-width="1.5" />
-        </svg>
-        <span class="font-display text-xl tracking-tight">Taller</span>
-        <span class="rounded-full border border-line px-2 py-0.5 text-[11px] uppercase tracking-wider text-stone"
-          >Documentación</span
-        >
-      </a>
-      <nav class="flex items-center gap-4 text-sm text-stone">
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/">Crear una API</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/fuentes">Fuentes públicas</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
-        <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/listar">/api/listar</a>
-        <a
-          class="underline-offset-4 hover:text-ivory hover:underline"
-          href="https://github.com/muecojulio/generador-apis-gratuitas"
-          >Código</a
-        >
-      </nav>
+    <header class="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-3.5">
+        <a href="/" class="group flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/40 bg-panel shadow-brillo transition-transform group-hover:scale-105">
+            <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M6 23h20" stroke="#f6f2e9" stroke-width="2" stroke-linecap="round" />
+              <path d="M10 18l6-9 6 9" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+              <circle cx="16" cy="11" r="4.8" fill="#e87a45" />
+              <circle cx="9" cy="23" r="2" fill="#34d399" />
+              <circle cx="23" cy="23" r="2" fill="#38bdf8" />
+            </svg>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-display text-xl tracking-tight text-ivory">Taller</span>
+            <span class="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-sky-300"
+              >OpenAPI Studio</span
+            >
+          </div>
+        </a>
+
+        <nav class="flex flex-wrap items-center gap-4 text-sm text-stone">
+          <a class="transition-colors hover:text-clay" href="/">← Crear o probar API</a>
+          <a class="transition-colors hover:text-clay" href="/api/fuentes">Fuentes públicas</a>
+          <a class="transition-colors hover:text-clay" href="/privacidad">Privacidad</a>
+          <a class="transition-colors hover:text-clay" href="/api/listar">/api/listar</a>
+          <a
+            class="transition-colors hover:text-ivory"
+            href="https://github.com/muecojulio/generador-apis-gratuitas"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub ↗</a
+          >
+        </nav>
+
+        <div class="flex items-center gap-1.5 rounded-full border border-line bg-panel/90 p-1 text-xs" role="group" aria-label="Atmósfera visual">
+          <button
+            type="button"
+            data-tema="tema-fragua"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium transition-all chip-activo"
+          >
+            🔥 Fragua
+          </button>
+          <button
+            type="button"
+            data-tema="tema-nebulosa"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
+          >
+            🌌 Nebulosa
+          </button>
+          <button
+            type="button"
+            data-tema="tema-bosque"
+            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
+          >
+            🌿 Bio
+          </button>
+        </div>
+      </div>
     </header>
 
     <main class="mx-auto max-w-6xl px-5 pb-20">
-      <section class="border-y border-line py-8">
+      <section class="tarjeta-destacada mt-6 rounded-[24px] p-6 sm:p-8">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
-            <p class="text-xs font-medium uppercase tracking-[0.22em] text-clay">OpenAPI 3.0 · generado del plano</p>
-            <h1 id="titulo" class="mt-2 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
-              Documentación
+            <div class="inline-flex items-center gap-2 rounded-full border border-clay/40 bg-clay/10 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-clay">
+              <span>📖 OpenAPI 3.0.3 · Inspirado en Scalar &amp; Hoppscotch</span>
+            </div>
+            <h1 id="titulo" class="mt-3 font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+              Explorador de Documentación
             </h1>
             <p id="resumen" class="mt-3 text-base leading-relaxed text-stone">
-              Cada API publica su propio <code class="text-ivory">openapi.json</code>. Aquí lo ves en claro, con
-              esquemas, ejemplos y un botón para probar las lecturas.
+              Cada API publica su propio <code class="text-ivory">openapi.json</code>. Inspecciona tablas, reglas,
+              prueba lecturas GET con medición de latencia y copia código en cURL, JavaScript o Python.
             </p>
           </div>
           <div class="w-full max-w-xs">
-            <label for="selector" class="block text-xs font-medium uppercase tracking-[0.16em] text-stone"
-              >Elegir API</label
+            <label for="selector" class="block text-xs font-semibold uppercase tracking-[0.16em] text-clay"
+              >Cambiar de API</label
             >
             <select
               id="selector"
-              class="mt-2 w-full rounded-xl border border-line bg-panel px-4 py-3 text-sm text-ivory"
+              class="mt-2 w-full rounded-xl border border-line bg-ink px-4 py-3 font-mono text-sm text-ivory"
             >
               <option value="">Cargando…</option>
             </select>
@@ -79,18 +117,18 @@
       <div id="contenido" class="mt-8"></div>
     </main>
 
-    <footer class="border-t border-line">
+    <footer class="border-t border-line bg-panel/60">
       <div
         class="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-8 text-xs text-stone sm:flex-row sm:items-center sm:justify-between"
       >
-        <p>Documentación generada desde los planos de este repositorio. Sin servicios de pago.</p>
-        <p>
+        <p>Documentación interactiva generada desde los planos de este repositorio. Sin servicios de pago.</p>
+        <p class="flex flex-wrap items-center gap-x-3 gap-y-1">
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/salud">Estado</a>
-          ·
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/api/proveedores">Modelos</a>
-          ·
+          <span>·</span>
           <a class="underline-offset-4 hover:text-ivory hover:underline" href="/privacidad">Privacidad</a>
-          ·
+          <span>·</span>
           <a
             class="underline-offset-4 hover:text-ivory hover:underline"
             href="https://github.com/muecojulio/generador-apis-gratuitas#readme"

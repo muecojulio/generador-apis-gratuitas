@@ -130,7 +130,25 @@ contraseñas fuera del repositorio.
 
 ---
 
-## 7. Problemas frecuentes
+## 7. Dependencias de compilación y auditoría
+
+Las funciones de `api/` solo usan módulos de Node y `lib/`, así que el despliegue
+**no tiene dependencias de ejecución**. Todo lo demás (Capacitor, esbuild,
+`sharp`, Tailwind) está en `devDependencies` y solo se usa al compilar:
+
+```bash
+npm audit --omit=dev   # 0 vulnerabilidades: es lo que de verdad se publica
+npm audit              # incluye herramientas de compilación
+```
+
+El CLI de Capacitor 6 arrastra `tar` 6.x, con avisos de seguridad conocidos.
+No se puede forzar `tar` 7.5.21+ porque cambió su interoperabilidad CommonJS y
+rompe `cap sync` (`tar_1.default.extract`), y `tar` 6.x no tiene parche: la
+solución limpia es subir a Capacitor 8, que ya usa una versión corregida. Ese
+`tar` solo extrae plantillas propias durante la compilación y no se ejecuta en
+el servidor ni procesa archivos de terceros.
+
+## 8. Problemas frecuentes
 
 | Síntoma | Causa y solución |
 | --- | --- |

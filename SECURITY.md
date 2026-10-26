@@ -1,84 +1,36 @@
-# Seguridad
+# Política de seguridad
 
-Gracias por tomarte el tiempo de revisar el taller. Este documento explica cómo
-avisar de una vulnerabilidad y qué medidas ya están puestas.
+## Cómo avisar de un fallo
 
-## Cómo reportar
+Si encuentras una vulnerabilidad, **no abras un issue público** con los detalles de explotación. Usa uno de estos dos canales privados:
 
-- **Usa el aviso privado de GitHub**: entra en
-  <https://github.com/muecojulio/generador-apis-gratuitas/security/advisories/new>
-  y describe el problema. Es privado, llega solo a los mantenedores y permite
-  coordinar la solución antes de que se publique.
-- **No abras un issue público** con detalles explotables ni incluyas datos
-  personales, tokens reales o capturas con secretos. Si necesitas enviar una
-  prueba, usa un repositorio de ejemplo con datos inventados.
-- También hay un contacto legible por máquina en
-  [`./.well-known/security.txt`](./.well-known/security.txt).
+1. La pestaña **Security → Report a vulnerability** de este repositorio:
+   <https://github.com/muecojulio/generador-apis-gratuitas/security/advisories/new>
+2. Un correo a `324687122+muecojulio@users.noreply.github.com` con el asunto `[seguridad] generador-apis-gratuitas`.
 
-Plazos orientativos: acuse de recibo en **72 horas**, primera valoración en
-**7 días** y, si el fallo se confirma, una corrección en **30 días**. Si es
-grave y hay explotación activa, se intentará parchear antes.
+Incluye los pasos para reproducirlo y qué impacto tendría. También está publicado `/.well-known/security.txt` según el [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116), y la política de privacidad completa está disponible en [`PRIVACY.md`](./PRIVACY.md) y en `/privacidad`.
 
-## Qué versiones cubre
+## Qué protecciones lleva el taller
 
-La rama `main` y el despliegue más reciente. El taller no mantiene versiones
-antiguas: la corrección se publica en `main` y Vercel redespliega sola.
-
-## Alcance
-
-**En alcance**
-
-- Saltarse el token de una API (`Authorization: Bearer`, `X-API-Token`) o su
-  modo «todo».
-- Leer datos que la API marca como protegidos, o escribir sin token.
-- Inyección de código en el plano (todo/dead code, plantillas, `eval`).
-- XSS en la página, en `/docs` o en las respuestas JSON.
-- SSRF a través de cabeceras (`X-Forwarded-Host`) o de las fuentes públicas.
-- Fuga de `GITHUB_PAT`, `GENERADOR_SECRETO` o claves de IA (en respuestas,
-  logs, cabeceras, OpenAPI o el repositorio).
-- Evasión de los límites de tamaño, registros, retención o cupo de peticiones.
-- Inyección de comandos en los flujos de GitHub Actions.
-- Debilidades de las cabeceras de seguridad o de la CSP.
-
-**Fuera de alcance**
-
-- Los datos de `data/` son **públicos por diseño** si el repositorio es público.
-- Que cualquiera pueda crear APIs cuando **no** se configuró
-  `GENERADOR_SECRETO`: es el comportamiento documentado del taller abierto.
-- Límites de terceros (GitHub, Vercel o los proveedores gratuitos de IA).
-- Fuerza bruta contra tokens de 192 bits generados por el taller (no es
-  práctico) o contra tokens débiles elegidos a mano por el usuario.
-- Ataques de denegación de servicio volumétricos: el plan gratuito no incluye
-  mitigación a nivel de red.
-
-## Medidas ya aplicadas
-
-- Comparación de huellas SHA-256 en tiempo constante; nunca se guarda el token
-  en claro.
-- Bloqueo temporal tras 20 intentos fallidos por minuto y por IP.
-- CORS cerrado en las rutas de administración; CORS abierto solo en las APIs
-  públicas, que no usan cookies.
-- Límite de cuerpo (1 MB en datos, 40 KB en la creación), de registros, de
-  tamaño de archivo y de velocidad de consulta.
-- La IA nunca escribe código: solo se acepta un plano JSON normalizado y
-  validado antes de publicarse.
-- Cabeceras de seguridad: CSP estricta, `nosniff`, `X-Frame-Options: DENY`,
-  HSTS, `Referrer-Policy`, `Permissions-Policy` y `Cross-Origin-*`.
-- Sin dependencias de ejecución: `npm audit --omit=dev` da **0
-  vulnerabilidades**. Las únicas herramientas son Tailwind y las fuentes, y solo
-  se usan al compilar. Flujo de trabajo `Pruebas` en cada push y pull request.
-- Avisos de desarrollo conocidos: Tailwind 3 arrastra `braces`, `micromatch` y
-  `fast-glob`, que hoy no tienen versión parcheada y solo se usan para leer
-  archivos **del propio repositorio** al compilar el CSS. No viajan al sitio ni
-  procesan datos de terceros. `postcss-nested` y `postcss-selector-parser` sí se
-  actualizaron mediante `overrides` en `package.json`; el CSS resultante es
-  idéntico y una prueba lo comprueba.
-- Los errores internos no devuelven mensajes de GitHub ni rutas del servidor.
-
-## Buenas prácticas para quien despliega
-
-- Define `GENERADOR_SECRETO` si el sitio es público: sin él, cualquiera puede
-  pedir APIs y llenar el repositorio.
-- Usa un PAT *fine-grained* limitado a este repositorio y con caducidad.
-- No pongas datos personales en APIs cuyo repositorio sea público.
-- Revisa los avisos de seguridad de GitHub tras cada cambio.
+- **La IA nunca genera código ejecutable.** Solo devuelve un plano JSON (`api/<nombre>/spec.json`) que pasa por `normalizar()` en `lib/motor.mjs` y es servido por el mismo motor fijo (`lib/runtime.js`).
+- **Prevención de polución de prototipos e inyección de caracteres de control.**
+  - `lib/http.js` (`leerJson`) sanea recursivamente cualquier objeto JSON entrante eliminando claves peligrosas (`__proto__`, `constructor`, `prototype`).
+  - `lib/motor.mjs` y `lib/catalogo.js` bloquean identificadores reservados de `Object.prototype` (`constructor`, `prototype`, `tostring`, `valueof`, `hasownproperty`) tanto en nombres de API como en recursos y campos.
+  - `lib/runtime.js` limpia caracteres de control ASCII y bytes nulos (`\u0000`) antes de validar, almacenar o indexar textos.
+- **Los tokens no viajan ni se guardan en claro.** El navegador genera el token con `crypto.getRandomValues`, calcula su huella SHA-256 y envía únicamente esa huella de 64 caracteres hexadecimales. La comparación en `lib/auth.js` se hace con `crypto.timingSafeEqual`.
+- **Freno a fuerza bruta y cupos por IP (`lib/auth.js` y `lib/cupo.js`).**
+  - Tras 8 intentos fallidos de token en un minuto desde la misma IP, la API responde `429 Too Many Requests` con `Retry-After`.
+  - Creación de APIs limitada por `TALLER_CUPO_HORA` (12/hora por IP por defecto).
+  - Escrituras en APIs (`POST`, `PUT`, `DELETE`) limitadas por `TALLER_CUPO_MIN` (60/minuto por IP por defecto), devolviendo `X-RateLimit-Limit` y `X-RateLimit-Remaining`.
+  - Normalización de IP en `lib/http.js` (`ipDe`), eliminando prefijos IPv4-mapeados (`::ffff:`) y caracteres inválidos.
+- **No se pisan datos a ciegas + respaldo en memoria (`lib/almacen.js` y `lib/runtime.js`).**
+  - Si la lectura previa a GitHub falla o el JSON guardado está dañado, las escrituras devuelven `503`/`500` y no sobrescriben el archivo.
+  - Si GitHub sufre un fallo transitorio durante una lectura (`GET`), `lib/almacen.js` sirve el último estado válido en memoria (`datos:respaldo:<api>`) marcado con `X-Datos: respaldo` y `Warning: 110`.
+  - Las respuestas de la API de GitHub tienen un tope estricto de 4 MB en `lib/github.js` para evitar agotamiento de memoria.
+- **Rutas de administración cerradas a otros sitios.** `/api/generar`, `/api/estado` y `/api/proveedores` no abren CORS al mundo, marcan `X-Robots-Tag: noindex`, y comprueban `Origin`, `Referer` y `Sec-Fetch-Site` frente al propio host (o la lista blanca `TALLER_ORIGENES`). Además, `/api/generar` puede exigir una contraseña maestra (`TALLER_CLAVE`).
+- **Cabeceras de seguridad en todas las respuestas (`lib/http.js` y `vercel.json`).**
+  - `Content-Security-Policy` estricta sin `'unsafe-inline'`, sin `eval` y con `frame-ancestors 'none'`.
+  - `Strict-Transport-Security: max-age=63072000; includeSubDomains` (HSTS).
+  - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `X-DNS-Prefetch-Control: off`, `Cross-Origin-Resource-Policy` y `Permissions-Policy`.
+- **Sin CDNs de terceros.** Tailwind CSS se compila en el repositorio (`npm run css`) y las fuentes viven en `/assets/fuentes/`. Ninguna página hace peticiones a Google Fonts ni a `cdn.tailwindcss.com`.
+- **Auditoría continua en CI (`.github/workflows/pruebas.yml`).** Cada push o Pull Request ejecuta `npm audit`, `npm test`, `npm run medir` y verifica que `assets/estilos.css` coincida exactamente con la salida de Tailwind.

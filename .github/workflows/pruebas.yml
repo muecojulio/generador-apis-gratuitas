@@ -37,13 +37,16 @@ jobs:
       - name: Instalar herramientas de desarrollo
         run: npm ci
 
-      - name: Auditar dependencias de ejecución
-        run: npm audit --omit=dev
+      - name: Auditar dependencias
+        run: npm audit
 
       - name: Ejecutar las pruebas
         env:
           TALLER_FUENTES: "0"
         run: npm test
+
+      - name: Medir el rendimiento de los índices
+        run: npm run medir
 
       - name: Comprobar que el CSS está al día
         run: |

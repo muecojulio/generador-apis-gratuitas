@@ -39,6 +39,7 @@ const { generar: generarOpenapi } = require("../lib/openapi.js");
 const cacheMod = require("../lib/cache.js");
 const indiceMod = require("../lib/indice.js");
 const httpMod = require("../lib/http.js");
+const cupoMod = require("../lib/cupo.js");
 const publicas = require("../lib/publicas.js");
 const fuentesGithub = require("../lib/fuentes-github.js");
 const catalogoMod = require("../lib/catalogo.js");
@@ -726,8 +727,60 @@ const recursosIndice = indiceMod.indexarRecursos([{ nombre: "a" }, { nombre: "b"
 assert.equal(recursosIndice.total, 2);
 assert.equal(recursosIndice.obtener("a").nombre, "a");
 assert.equal(recursosIndice.obtener("c"), undefined);
-const grandes = Array.from({ length: 5000 }, (_, i) => ({ id: "r" + i, nombre: "n" + i }));
-assert.equal(indiceMod.crearIndice(grandes).obtener("r4999").nombre, "n4999");
+const grandes = Array.from({ length: 5000 }, (_, i) => ({
+  id: "r" + i,
+  nombre: i === 4999 ? "Camiseta de algodón orgánico" : "Producto " + i,
+  categoria: i % 2 === 0 ? "textil" : "hogar",
+  activo: i % 3 === 0,
+}));
+const indiceGrande = indiceMod.crearIndice(grandes);
+assert.equal(indiceGrande.obtener("r4999").nombre, "Camiseta de algodón orgánico");
+assert.equal(indiceGrande.posicion("r4999"), 4999);
+assert.equal(indiceGrande.posicion("no-existe"), -1);
+assert.equal(indiceGrande.filtrarPorCampo("categoria", "textil").length, 2500);
+assert.equal(indiceGrande.filtrar({ categoria: "textil", activo: "si" }).length, 834);
+assert.equal(indiceGrande.buscar("algodon").length, 1, "índice de trigramas sin acentos en 5000 filas");
+assert.ok(indiceGrande.estadisticas().trigramasUnicos > 10);
+assert.equal( typeof cacheMod.purgar(), "number" );
+assert.equal( typeof cacheMod.estadisticas().tasaAciertos, "number" );
+
+// --- El índice en caché distingue entre recursos distintos de una misma API.
+const specMulti = {
+  ...plano,
+  nombre: "multi-recurso",
+  ejemplos: {
+    productos: [
+      { id: "p1", nombre: "Pan", precio: 12, existencias: 4, activo: true },
+      { id: "p2", nombre: "Café", precio: 45, existencias: 10, activo: false },
+    ],
+    categorias: [{ id: "c1", nombre: "Panadería", descripcion: "Horno diario" }],
+  },
+};
+const handlerMulti = crear(specMulti, { almacen: memoria() });
+const resProd = llamada("GET", "/api/multi-recurso/productos");
+await handlerMulti(resProd.req, resProd.res);
+assert.equal((await resProd.json()).cuerpo.datos[0].id, "p1");
+assert.ok(resProd.headers.ETag, "las lecturas de recursos incluyen ETag");
+assert.ok(["HIT", "MISS"].includes(resProd.headers["X-Cache"]), "las lecturas indican X-Cache");
+
+const resProd304 = llamada("GET", "/api/multi-recurso/productos", undefined, {
+  "if-none-match": resProd.headers.ETag,
+});
+await handlerMulti(resProd304.req, resProd304.res);
+assert.equal(resProd304.res.statusCode, 304, "la lista de un recurso responde 304 con If-None-Match");
+
+const resCat = llamada("GET", "/api/multi-recurso/categorias");
+await handlerMulti(resCat.req, resCat.res);
+const jsonCat = await resCat.json();
+assert.equal(jsonCat.cuerpo.total, 1);
+assert.equal(jsonCat.cuerpo.datos[0].id, "c1", "el segundo recurso no reutiliza por error el índice del primero");
+
+// Filtro secundario O(1) por campo en la URL (?activo=true).
+const resFiltroActivo = llamada("GET", "/api/multi-recurso/productos?activo=true");
+await handlerMulti(resFiltroActivo.req, resFiltroActivo.res);
+const jsonFiltroActivo = await resFiltroActivo.json();
+assert.equal(jsonFiltroActivo.cuerpo.total, 1);
+assert.equal(jsonFiltroActivo.cuerpo.datos[0].id, "p1");
 
 // --- Las listas de nombres reservados de motor y catálogo no se separan.
 assert.deepEqual(
@@ -735,6 +788,47 @@ assert.deepEqual(
   [...catalogoMod.RESERVADOS].sort(),
   "lib/motor.mjs y lib/catalogo.js deben reservar los mismos nombres"
 );
+assert.equal(slugValido("constructor"), false, "no se permite constructor como nombre de API");
+assert.equal(slugValido("prototype"), false, "no se permite prototype como nombre de API");
+
+// --- Saneamiento contra polución de prototipos, bytes nulos y normalización de IP.
+const cuerpoContaminado = await httpMod.leerJson(
+  {
+    headers: { "content-type": "application/json" },
+    body: '{"nombre":"Pan\\u0000Limpio","__proto__":{"contaminado":true},"constructor":{"prototype":{"malo":1}}}',
+  },
+  1000
+);
+assert.equal(({}).contaminado, undefined, "__proto__ no contamina Object.prototype");
+assert.equal(Object.prototype.hasOwnProperty.call(cuerpoContaminado, "__proto__"), false);
+assert.equal(Object.prototype.hasOwnProperty.call(cuerpoContaminado, "constructor"), false);
+assert.equal(httpMod.ipDe({ headers: { "x-forwarded-for": "::ffff:203.0.113.9, 10.0.0.1" } }), "203.0.113.9");
+
+const postNulo = llamada("POST", "/api/multi-recurso/categorias", {
+  nombre: "Bebidas\u0000Frías\u0007",
+  descripcion: "Refrescos",
+});
+await handlerMulti(postNulo.req, postNulo.res);
+const creadoNulo = await postNulo.json();
+assert.equal(creadoNulo.status, 201);
+assert.equal(creadoNulo.cuerpo.dato.nombre, "BebidasFrías", "se eliminan bytes nulos y caracteres de control");
+
+// --- Cupo de escritura por IP (TALLER_CUPO_MIN).
+process.env.TALLER_CUPO_MIN = "2";
+cupoMod.limpiar();
+const ipPrueba = { "x-forwarded-for": "198.51.100.77" };
+const esc1 = llamada("POST", "/api/multi-recurso/categorias", { nombre: "Uno" }, ipPrueba);
+const esc2 = llamada("POST", "/api/multi-recurso/categorias", { nombre: "Dos" }, ipPrueba);
+const esc3 = llamada("POST", "/api/multi-recurso/categorias", { nombre: "Tres" }, ipPrueba);
+await handlerMulti(esc1.req, esc1.res);
+await handlerMulti(esc2.req, esc2.res);
+await handlerMulti(esc3.req, esc3.res);
+assert.equal((await esc1.json()).status, 201);
+assert.equal((await esc2.json()).status, 201);
+assert.equal((await esc3.json()).status, 429, "la tercera escritura supera TALLER_CUPO_MIN=2");
+assert.ok(esc3.headers["Retry-After"]);
+delete process.env.TALLER_CUPO_MIN;
+cupoMod.limpiar();
 
 // --- Cabeceras de seguridad, ETag y 304 en una API generada.
 const seguridad = llamada("GET", "/api/tienda-barrio");
@@ -1072,6 +1166,8 @@ assert.equal(muestra.fuentes.length, 5);
 assert.ok(muestra.fuentes[0].categoriaEs, "las categorías se traducen al español");
 const soloClima = fuentesGithub.muestra(copiaLocal, { categoria: "Weather", limite: 50 });
 assert.ok(soloClima.fuentes.every((fuente) => fuente.categoria === "Weather"));
+const soloClimaEs = fuentesGithub.muestra(copiaLocal, { categoria: "Clima", limite: 50 });
+assert.equal(soloClimaEs.total, soloClima.total, "el índice secundario de categorías admite el nombre en español");
 
 fuentesGithub.__pruebas.fijarFetch(async () =>
   respuestaFalsa({ content: Buffer.from(markdown, "utf8").toString("base64"), encoding: "base64" })
@@ -1205,6 +1301,8 @@ assert.ok(cabecerasVercel.includes("Content-Security-Policy"));
 assert.ok(cabecerasVercel.includes("Strict-Transport-Security"));
 assert.ok(cabecerasVercel.includes("default-src 'self'"));
 assert.ok(fs.existsSync(path.join(RAIZ, "privacidad.html")));
+assert.ok(fs.existsSync(path.join(RAIZ, "PRIVACY.md")), "debe existir PRIVACY.md en la raíz");
+assert.ok(fs.existsSync(path.join(RAIZ, "SECURITY.md")), "debe existir SECURITY.md en la raíz");
 assert.ok(fs.existsSync(path.join(RAIZ, ".well-known/security.txt")));
 
 // --- Servidor local: las rutas principales responden como en Vercel.

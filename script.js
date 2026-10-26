@@ -25,6 +25,57 @@ const maxKbInput = document.querySelector("#max-kb");
 
 const REPOS = "https://github.com/muecojulio/generador-apis-gratuitas";
 
+/* 0. Entorno: web o app nativa, y servidor del taller --------------------- */
+
+const CONFIG = Object.freeze(
+  Object.assign({ nativo: false, apiBase: "", version: "1.0.0", compilado: "web" }, window.TALLER_CONFIG || {})
+);
+
+const CLAVE_SERVIDOR = "taller:servidor";
+
+function normalizarServidor(valor) {
+  const texto = String(valor || "").trim();
+  if (!texto) return "";
+  try {
+    const url = new URL(texto);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    return url.origin + url.pathname.replace(/\/+$/, "");
+  } catch {
+    return "";
+  }
+}
+
+function leerPreferencia(clave) {
+  try {
+    return localStorage.getItem(clave);
+  } catch {
+    return null;
+  }
+}
+
+function guardarPreferencia(clave, valor) {
+  try {
+    if (valor === null || valor === undefined) localStorage.removeItem(clave);
+    else localStorage.setItem(clave, valor);
+  } catch {
+    /* sin almacenamiento: la sesión sigue funcionando */
+  }
+}
+
+let servidorApi = normalizarServidor(leerPreferencia(CLAVE_SERVIDOR) || CONFIG.apiBase);
+
+/** Convierte una ruta del taller en URL absoluta cuando hay servidor remoto. */
+function urlApi(ruta) {
+  const valor = String(ruta || "");
+  if (!valor.startsWith("/") || valor.startsWith("//")) return valor;
+  return servidorApi ? servidorApi.replace(/\/+$/, "") + valor : valor;
+}
+
+/** `fetch` que respeta el servidor configurado (web: mismo origen). */
+function fetchApi(ruta, opciones) {
+  return fetch(urlApi(ruta), opciones);
+}
+
 const ESCENARIOS = [
   {
     id: "tienda-barrio",
@@ -165,19 +216,19 @@ const MOTORES = {
 };
 
 const COLORES_TIPO = {
-  texto: "border-sky-500/40 bg-sky-500/10 text-sky-300",
-  numero: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  entero: "border-orange-500/40 bg-orange-500/10 text-orange-300",
-  booleano: "border-purple-500/40 bg-purple-500/10 text-purple-300",
-  fecha: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-  email: "border-pink-500/40 bg-pink-500/10 text-pink-300",
+  texto: "borde-info fondo-info tono-info",
+  numero: "borde-aviso fondo-aviso tono-aviso",
+  entero: "borde-extra fondo-extra tono-aviso",
+  booleano: "borde-extra fondo-extra tono-extra",
+  fecha: "borde-exito fondo-exito tono-exito",
+  email: "borde-extra fondo-extra tono-extra",
 };
 
 const COLORES_METODO = {
-  GET: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  POST: "border-sky-500/40 bg-sky-500/15 text-sky-300",
-  PUT: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  DELETE: "border-rose-500/40 bg-rose-500/15 text-rose-300",
+  GET: "borde-exito fondo-exito tono-exito",
+  POST: "borde-info fondo-info tono-info",
+  PUT: "borde-aviso fondo-aviso tono-aviso",
+  DELETE: "borde-peligro fondo-peligro tono-peligro",
 };
 
 const CAMPOS_MAGICOS = {
@@ -262,39 +313,158 @@ async function copiar(textoCopiar, nodo, etiqueta) {
   }
 }
 
-/* 1. Selector de Atmósfera Visual (Temas vivos sin estilos inline) -------- */
+/* 1. Apariencia: tema claro/oscuro y color de acento ---------------------- */
 
-const TEMAS = ["tema-fragua", "tema-nebulosa", "tema-bosque"];
+const TEMAS = ["tema-claro", "tema-oscuro"];
+const ACENTOS = ["acento-indigo", "acento-jade", "acento-ambar", "acento-violeta"];
 const botonesTema = document.querySelectorAll(".boton-tema");
+const botonesAcento = document.querySelectorAll(".boton-acento");
+const botonTemaBarra = document.querySelector("#boton-tema");
+const iconoTema = document.querySelector("#icono-tema use");
+const metaColor = document.querySelector('meta[name="theme-color"]');
 
-function aplicarTema(tema) {
-  const elegido = TEMAS.includes(tema) ? tema : "tema-fragua";
-  const raiz = document.documentElement;
-  for (const clase of TEMAS) raiz.classList.remove(clase);
-  raiz.classList.add(elegido);
+function temaActual() {
+  return document.documentElement.classList.contains("tema-oscuro") ? "tema-oscuro" : "tema-claro";
+}
+
+function acentoActual() {
+  return ACENTOS.find((clase) => document.documentElement.classList.contains(clase)) || "acento-indigo";
+}
+
+function pintarBotonesApariencia() {
+  const tema = temaActual();
+  const acento = acentoActual();
   for (const boton of botonesTema) {
-    const activo = boton.getAttribute("data-tema") === elegido;
-    boton.className =
-      "boton-tema rounded-full px-2.5 py-1 font-medium transition-all " +
-      (activo ? "chip-activo" : "text-stone hover:text-ivory");
+    boton.classList.toggle("chip-activo", boton.getAttribute("data-tema") === tema);
   }
-  try {
-    localStorage.setItem("taller:tema", elegido);
-  } catch {
-    /* sin almacenamiento local */
+  for (const boton of botonesAcento) {
+    boton.classList.toggle("chip-activo", boton.getAttribute("data-acento") === acento);
+  }
+  if (iconoTema) iconoTema.setAttribute("href", tema === "tema-oscuro" ? "#i-sol" : "#i-luna");
+  if (botonTemaBarra) {
+    botonTemaBarra.setAttribute(
+      "aria-label",
+      tema === "tema-oscuro" ? "Cambiar al tema claro" : "Cambiar al tema oscuro"
+    );
+  }
+  if (metaColor) metaColor.setAttribute("content", tema === "tema-oscuro" ? "#090c14" : "#f5f7fb");
+}
+
+function anunciarTema() {
+  pintarBotonesApariencia();
+  if (window.TALLER_NATIVO && typeof window.TALLER_NATIVO.actualizarBarra === "function") {
+    window.TALLER_NATIVO.actualizarBarra(temaActual() === "tema-oscuro");
   }
 }
 
-try {
-  const guardado = localStorage.getItem("taller:tema");
-  if (guardado) aplicarTema(guardado);
-} catch {
-  /* continúa con tema por defecto */
+function aplicarTema(tema) {
+  const elegido = TEMAS.includes(tema) ? tema : "tema-claro";
+  const raiz = document.documentElement;
+  for (const clase of TEMAS) raiz.classList.remove(clase);
+  raiz.classList.add(elegido);
+  guardarPreferencia("taller:tema", elegido);
+  anunciarTema();
+}
+
+function aplicarAcento(acento) {
+  const elegido = ACENTOS.includes(acento) ? acento : "acento-indigo";
+  const raiz = document.documentElement;
+  for (const clase of ACENTOS) raiz.classList.remove(clase);
+  raiz.classList.add(elegido);
+  guardarPreferencia("taller:acento", elegido);
+  pintarBotonesApariencia();
 }
 
 for (const boton of botonesTema) {
   boton.addEventListener("click", () => aplicarTema(boton.getAttribute("data-tema")));
 }
+
+for (const boton of botonesAcento) {
+  boton.addEventListener("click", () => aplicarAcento(boton.getAttribute("data-acento")));
+}
+
+if (botonTemaBarra) {
+  botonTemaBarra.addEventListener("click", () => {
+    aplicarTema(temaActual() === "tema-oscuro" ? "tema-claro" : "tema-oscuro");
+  });
+}
+
+pintarBotonesApariencia();
+
+/* 2. Navegación por pestañas (escritorio y móvil) ------------------------- */
+
+const PANELES = {
+  inicio: { titulo: "Resumen" },
+  disenar: { titulo: "Diseñar API" },
+  probar: { titulo: "Consola de pruebas" },
+  apis: { titulo: "Mis APIs" },
+  fuentes: { titulo: "APIs públicas" },
+  ajustes: { titulo: "Ajustes y aplicación" },
+};
+
+const tituloPanel = document.querySelector("#titulo-panel");
+let panelActivo = "inicio";
+
+function vibrar() {
+  if (window.TALLER_NATIVO && typeof window.TALLER_NATIVO.vibrar === "function") {
+    window.TALLER_NATIVO.vibrar();
+  }
+}
+
+function navegar(panel, opciones) {
+  const destino = PANELES[panel] ? panel : "inicio";
+  const cambia = destino !== panelActivo;
+  panelActivo = destino;
+
+  for (const seccion of document.querySelectorAll("[data-panel-vista]")) {
+    seccion.classList.toggle("activo", seccion.getAttribute("data-panel-vista") === destino);
+  }
+  for (const boton of document.querySelectorAll("[data-panel]")) {
+    const activo = boton.getAttribute("data-panel") === destino;
+    boton.classList.toggle("activo", activo);
+    boton.setAttribute("aria-current", activo ? "page" : "false");
+  }
+
+  if (tituloPanel) tituloPanel.textContent = PANELES[destino].titulo;
+  if (cambia && (!opciones || opciones.silencio !== true)) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    vibrar();
+  }
+
+  try {
+    const url = new URL(location.href);
+    url.hash = "/" + destino;
+    history.replaceState(null, "", url);
+  } catch {
+    /* sin historial disponible */
+  }
+
+  document.dispatchEvent(new CustomEvent("taller:panel", { detail: { panel: destino } }));
+  return destino;
+}
+
+function fuentesVacia() {
+  const caja = document.querySelector("#fuentes");
+  return Boolean(caja && !caja.childElementCount);
+}
+
+for (const boton of document.querySelectorAll("[data-panel]")) {
+  boton.addEventListener("click", () => navegar(boton.getAttribute("data-panel")));
+}
+
+for (const boton of document.querySelectorAll("[data-ir]")) {
+  boton.addEventListener("click", () => navegar(boton.getAttribute("data-ir")));
+}
+
+function panelDelHash() {
+  const bruto = String(location.hash || "").replace(/^#\/?/, "");
+  return PANELES[bruto] ? bruto : "";
+}
+
+window.addEventListener("hashchange", () => {
+  const destino = panelDelHash();
+  if (destino) navegar(destino, { silencio: true });
+});
 
 /* 2. Galería de Escenarios Creativos y Asistente de Bloques --------------- */
 
@@ -453,7 +623,7 @@ function dibujarPlano() {
   for (const [etiqueta, valor, tono] of [
     ["Tablas", String(diseno.recursos.length), "text-ivory"],
     ["Campos", String(totalCampos), "text-clay"],
-    ["Endpoints", String(totalRutas), "text-emerald-300"],
+    ["Endpoints", String(totalRutas), "tono-exito"],
   ]) {
     const celda = document.createElement("div");
     celda.className = "rounded-xl border border-line bg-ink/80 px-3 py-2 text-center";
@@ -466,7 +636,7 @@ function dibujarPlano() {
   if (magicos.length) {
     const avisoMagico = document.createElement("div");
     avisoMagico.className =
-      "mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-200";
+      "mt-3 rounded-xl border borde-exito fondo-exito px-3 py-2 text-[11px] tono-exito";
     avisoMagico.textContent =
       "✨ Enriquecimiento activo: los campos «" +
       magicos.join(", ") +
@@ -524,7 +694,7 @@ function dibujarPlano() {
         izq.appendChild(texto("code", campo.nombre, "font-mono text-ivory"));
         if (campo.requerido) {
           izq.appendChild(
-            texto("span", "req", "rounded border border-clay/40 bg-clay/10 px-1.5 py-0.2 text-[10px] text-clay")
+            texto("span", "req", "rounded border border-clay/40 bg-clay/10 px-1.5 py-0.5 text-[10px] text-clay")
           );
         }
         if (CAMPOS_MAGICOS[campo.nombre]) {
@@ -532,7 +702,7 @@ function dibujarPlano() {
             texto(
               "span",
               CAMPOS_MAGICOS[campo.nombre],
-              "rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.2 text-[10px] text-emerald-300"
+              "rounded border borde-exito fondo-exito px-1.5 py-0.5 text-[10px] tono-exito"
             )
           );
         }
@@ -591,7 +761,7 @@ function dibujarPlano() {
     const pre = texto(
       "pre",
       JSON.stringify(muestra, null, 2),
-      "max-h-64 overflow-auto rounded-xl border border-line bg-ink/90 p-3 font-mono text-[11px] leading-relaxed text-emerald-200"
+      "max-h-64 overflow-auto rounded-xl border border-line bg-ink/90 p-3 font-mono text-[11px] leading-relaxed tono-exito"
     );
     cuerpoPlano.appendChild(pre);
   }
@@ -610,6 +780,8 @@ function refrescarMeta() {
 
 async function cargarTelemetria() {
   const pulsoEstado = document.querySelector("#pulso-estado");
+  const pulsoLateral = document.querySelector("#pulso-lateral");
+  const estadoConexion = document.querySelector("#estado-conexion");
   const statApis = document.querySelector("#stat-apis");
   const statFunciones = document.querySelector("#stat-funciones");
   const statMotores = document.querySelector("#stat-motores");
@@ -617,8 +789,8 @@ async function cargarTelemetria() {
 
   try {
     const [resSalud, resProv] = await Promise.all([
-      fetch("/api/salud", { cache: "no-store" }),
-      fetch("/api/proveedores", { cache: "no-store" }),
+      fetchApi("/api/salud", { cache: "no-store" }),
+      fetchApi("/api/proveedores", { cache: "no-store" }),
     ]);
     if (resSalud.ok) {
       const salud = await resSalud.json();
@@ -628,6 +800,11 @@ async function cargarTelemetria() {
           (salud.cache ? salud.cache.entradas : 0) +
           " entradas · Normalización " +
           (salud.normalizacion && salud.normalizacion.activa ? "activa" : "lista");
+      }
+      if (pulsoLateral) pulsoLateral.textContent = "Servidor en línea";
+      if (estadoConexion) {
+        estadoConexion.textContent =
+          "Conectado a " + (servidorApi || location.origin) + " · " + (salud.apis || 0) + " APIs disponibles";
       }
       if (statApis && typeof salud.apis === "number") statApis.textContent = String(salud.apis);
       if (statFunciones && typeof salud.funciones === "number") {
@@ -649,7 +826,7 @@ async function cargarTelemetria() {
           texto(
             "span",
             idx + 1 + ". " + motorTexto(id),
-            "rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] text-emerald-300"
+            "rounded-lg border borde-exito fondo-exito px-2.5 py-1 font-mono text-[11px] tono-exito"
           )
         );
       });
@@ -663,7 +840,9 @@ async function cargarTelemetria() {
       radarIa.appendChild(contenedorChips);
     }
   } catch {
-    if (pulsoEstado) pulsoEstado.textContent = "Modo local / listo para diseñar";
+    if (pulsoEstado) pulsoEstado.textContent = "Sin conexión con el servidor · el diseñador sigue disponible";
+    if (pulsoLateral) pulsoLateral.textContent = "Sin conexión";
+    if (estadoConexion) estadoConexion.textContent = "No pude contactar con " + (servidorApi || location.origin) + ".";
   }
 }
 
@@ -682,7 +861,7 @@ let lenguajeConsola = "curl";
 function urlCompletaConsola() {
   let baseRuta = (consolaRutaInput && consolaRutaInput.value.trim()) || "/api/ejemplo-notas/notas";
   if (!baseRuta.startsWith("/")) baseRuta = "/" + baseRuta;
-  const url = new URL(baseRuta, location.origin);
+  const url = new URL(baseRuta, servidorApi || location.origin);
   const buscar = consolaBuscarInput && consolaBuscarInput.value.trim();
   const limite = consolaLimiteSelect && consolaLimiteSelect.value.trim();
   if (buscar) url.searchParams.set("buscar", buscar);
@@ -747,11 +926,11 @@ async function ejecutarConsola(rutaForzada) {
   const url = urlCompletaConsola();
   consolaSalida.textContent = "⏳ Consultando " + url.pathname + url.search + " …";
   vaciar(consolaMeta);
-  consolaMeta.appendChild(insignia("Consultando…", "border-amber-500/40 text-amber-300"));
+  consolaMeta.appendChild(insignia("Consultando…", "borde-aviso tono-aviso"));
 
   const t0 = performance.now();
   try {
-    const respuesta = await fetch(url.pathname + url.search, { cache: "no-store" });
+    const respuesta = await fetchApi(url.pathname + url.search, { cache: "no-store" });
     const ms = Math.max(1, Math.round(performance.now() - t0));
     const textoRespuesta = await respuesta.text();
     let formateado = textoRespuesta;
@@ -770,11 +949,11 @@ async function ejecutarConsola(rutaForzada) {
       insignia(
         "HTTP " + respuesta.status,
         respuesta.ok
-          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-          : "border-rose-500/40 bg-rose-500/10 text-rose-300"
+          ? "borde-exito fondo-exito tono-exito"
+          : "borde-peligro fondo-peligro tono-peligro"
       )
     );
-    consolaMeta.appendChild(insignia(ms + " ms", "border-sky-500/40 text-sky-300"));
+    consolaMeta.appendChild(insignia(ms + " ms", "borde-info tono-info"));
     if (totalRegistros !== null) {
       consolaMeta.appendChild(insignia(totalRegistros + " ítems", "border-clay/40 text-clay"));
     }
@@ -784,7 +963,7 @@ async function ejecutarConsola(rutaForzada) {
     consolaSalida.textContent = formateado;
   } catch (error) {
     vaciar(consolaMeta);
-    consolaMeta.appendChild(insignia("Error de red", "border-rose-500/40 text-rose-300"));
+    consolaMeta.appendChild(insignia("Error de red", "borde-peligro tono-peligro"));
     consolaSalida.textContent = "// No se pudo consultar: " + (error.message || error);
   }
 }
@@ -824,7 +1003,7 @@ async function cargarLista() {
   let apis = [];
   let fallo = null;
   try {
-    const respuesta = await fetch("/api/listar", { cache: "no-store" });
+    const respuesta = await fetchApi("/api/listar", { cache: "no-store" });
     if (!respuesta.ok) throw new Error("el servidor respondió " + respuesta.status);
     const json = await respuesta.json();
     apis = Array.isArray(json.apis) ? json.apis : [];
@@ -866,7 +1045,7 @@ async function cargarLista() {
     cabecera.appendChild(
       enlace(
         api.titulo || api.nombre,
-        api.ruta || "/api/" + api.nombre,
+        urlApi(api.ruta || "/api/" + api.nombre),
         "font-display text-xl text-ivory underline-offset-4 hover:text-clay hover:underline"
       )
     );
@@ -874,7 +1053,7 @@ async function cargarLista() {
     superior.appendChild(cabecera);
 
     superior.appendChild(
-      texto("p", api.ruta || "/api/" + api.nombre, "mt-1 font-mono text-xs text-emerald-300")
+      texto("p", urlApi(api.ruta || "/api/" + api.nombre), "mt-1 font-mono text-xs tono-exito")
     );
 
     if (api.resumen) {
@@ -900,10 +1079,10 @@ async function cargarLista() {
 
     const marcas = document.createElement("div");
     marcas.className = "mt-3 flex flex-wrap gap-1.5";
-    if (api.soloLectura) marcas.appendChild(insignia("solo lectura", "border-amber-500/40 text-amber-300"));
+    if (api.soloLectura) marcas.appendChild(insignia("solo lectura", "borde-aviso tono-aviso"));
     if (api.protegida) {
       marcas.appendChild(
-        insignia("token · " + (api.modoToken === "todo" ? "todo" : "escritura"), "border-sky-500/40 text-sky-300")
+        insignia("token · " + (api.modoToken === "todo" ? "todo" : "escritura"), "borde-info tono-info")
       );
     }
     if (api.limites) {
@@ -922,14 +1101,14 @@ async function cargarLista() {
     enlacesIzq.appendChild(
       enlace(
         "Documentación",
-        api.documentacion || "/docs?api=" + encodeURIComponent(api.nombre),
+        urlApi(api.documentacion || "/docs?api=" + encodeURIComponent(api.nombre)),
         "font-medium text-clay hover:underline"
       )
     );
     enlacesIzq.appendChild(
       enlace(
         "openapi.json",
-        api.openapi || "/api/" + api.nombre + "/openapi.json",
+        urlApi(api.openapi || "/api/" + api.nombre + "/openapi.json"),
         "text-stone hover:text-ivory",
         true
       )
@@ -951,8 +1130,7 @@ async function cargarLista() {
     );
     botonProbar.type = "button";
     botonProbar.addEventListener("click", () => {
-      const seccionConsola = document.querySelector("#consola-viva");
-      if (seccionConsola) seccionConsola.scrollIntoView({ behavior: "smooth", block: "start" });
+      navegar("probar");
       ejecutarConsola(rutaPrueba);
     });
     inferior.appendChild(botonProbar);
@@ -1019,7 +1197,7 @@ async function opcionesDeFormulario() {
 }
 
 async function pedirApi(payload) {
-  const respuesta = await fetch("/api/generar", {
+  const respuesta = await fetchApi("/api/generar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -1049,7 +1227,7 @@ async function esperarPublicacion(nombre, marca) {
     await dormir(5000);
 
     try {
-      const respuesta = await fetch("/api/estado?nombre=" + encodeURIComponent(nombre), { cache: "no-store" });
+      const respuesta = await fetchApi("/api/estado?nombre=" + encodeURIComponent(nombre), { cache: "no-store" });
       if (respuesta.ok) {
         const json = await respuesta.json();
         if (json.titulo) avisoMotor = motorTexto(json.motor);
@@ -1071,7 +1249,7 @@ async function esperarPublicacion(nombre, marca) {
     }
 
     try {
-      const respuesta = await fetch("/api/" + nombre, { cache: "no-store" });
+      const respuesta = await fetchApi("/api/" + nombre, { cache: "no-store" });
       const tipo = respuesta.headers.get("content-type") || "";
       if (respuesta.ok && tipo.includes("json")) {
         const json = await respuesta.json();
@@ -1088,7 +1266,7 @@ async function esperarPublicacion(nombre, marca) {
     throw error;
   }
   const error = new Error("Sigue en camino. Abre la ruta en un momento.");
-  error.enlace = location.origin + "/api/" + nombre;
+  error.enlace = urlApi("/api/" + nombre);
   throw error;
 }
 
@@ -1097,7 +1275,7 @@ function mostrarResultado(nombre, manifiesto, extras) {
   extras = extras || {};
   vaciar(caja);
   caja.className = "tarjeta-destacada mt-5 rounded-2xl p-5";
-  const enlaceApi = location.origin + "/api/" + nombre;
+  const enlaceApi = urlApi("/api/" + nombre);
 
   manifiesto = manifiesto || {};
   caja.appendChild(
@@ -1109,7 +1287,7 @@ function mostrarResultado(nombre, manifiesto, extras) {
   );
   const ancla = enlace(
     enlaceApi,
-    "/api/" + nombre,
+    urlApi("/api/" + nombre),
     "mt-1 block break-all font-mono text-xs text-clay underline-offset-4 hover:underline",
     true
   );
@@ -1134,14 +1312,14 @@ function mostrarResultado(nombre, manifiesto, extras) {
   documentos.appendChild(
     enlace(
       "📖 Abrir Documentación",
-      manifiesto.documentacion || "/docs?api=" + encodeURIComponent(nombre),
+      urlApi(manifiesto.documentacion || "/docs?api=" + encodeURIComponent(nombre)),
       "font-medium text-clay underline-offset-4 hover:underline"
     )
   );
   documentos.appendChild(
     enlace(
       "openapi.json",
-      manifiesto.openapi || "/api/" + nombre + "/openapi.json",
+      urlApi(manifiesto.openapi || "/api/" + nombre + "/openapi.json"),
       "text-stone underline-offset-4 hover:text-ivory hover:underline",
       true
     )
@@ -1150,16 +1328,16 @@ function mostrarResultado(nombre, manifiesto, extras) {
 
   if (extras.token) {
     const cajaToken = document.createElement("div");
-    cajaToken.className = "mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4";
+    cajaToken.className = "mt-4 rounded-xl border borde-aviso fondo-aviso p-4";
     cajaToken.appendChild(
-      texto("p", "🔐 Guarda este token ahora. No se puede recuperar.", "text-sm font-medium text-amber-200")
+      texto("p", "🔐 Guarda este token ahora. No se puede recuperar.", "text-sm font-medium tono-aviso")
     );
     const codigo = texto("code", extras.token, "mt-2 block break-all font-mono text-xs text-ivory");
     cajaToken.appendChild(codigo);
     const copiarToken = texto(
       "button",
       "Copiar token",
-      "mt-3 rounded-lg border border-amber-500/40 px-3 py-2 text-xs text-amber-200 hover:border-amber-300"
+      "mt-3 rounded-lg border borde-aviso px-3 py-2 text-xs tono-aviso hover:borde-aviso"
     );
     copiarToken.type = "button";
     copiarToken.addEventListener("click", () => copiar(extras.token, copiarToken, "Copiar token"));
@@ -1182,7 +1360,7 @@ function mostrarResultado(nombre, manifiesto, extras) {
       texto(
         "p",
         "Normaliza con APIs públicas: " + manifiesto.normalizacion.campos.join(", ") + ".",
-        "mt-1 text-xs text-emerald-300"
+        "mt-1 text-xs tono-exito"
       )
     );
   }
@@ -1207,16 +1385,24 @@ function mostrarResultado(nombre, manifiesto, extras) {
 
     const primerRecurso = (manifiesto.recursos && manifiesto.recursos[0] && manifiesto.recursos[0].nombre) || "";
     if (primerRecurso) {
-      const botonCurl = texto(
-        "button",
-        "Copiar ejemplo de curl",
-        "mt-3 rounded-lg border border-line px-3 py-2 text-xs text-ivory hover:border-clay hover:text-clay"
-      );
+      const acciones = document.createElement("div");
+      acciones.className = "mt-3 flex flex-wrap gap-2";
+
+      const botonProbarApi = texto("button", "⚡ Probar ahora en la consola", "boton boton-primario text-xs");
+      botonProbarApi.type = "button";
+      botonProbarApi.addEventListener("click", () => {
+        navegar("probar");
+        ejecutarConsola("/api/" + nombre + "/" + primerRecurso);
+      });
+      acciones.appendChild(botonProbarApi);
+
+      const botonCurl = texto("button", "Copiar ejemplo de curl", "boton boton-secundario text-xs");
       botonCurl.type = "button";
       botonCurl.addEventListener("click", () =>
-        copiar("curl " + location.origin + "/api/" + nombre + "/" + primerRecurso, botonCurl)
+        copiar("curl " + urlApi("/api/" + nombre + "/" + primerRecurso), botonCurl, "Copiar ejemplo de curl")
       );
-      caja.appendChild(botonCurl);
+      acciones.appendChild(botonCurl);
+      caja.appendChild(acciones);
     }
   }
   caja.classList.remove("hidden");
@@ -1331,7 +1517,7 @@ function tarjetaFuente(fuente, prueba) {
 
   if (Array.isArray(fuente.usos) && fuente.usos.length) {
     const usos = document.createElement("p");
-    usos.className = "mt-2 font-mono text-[11px] text-emerald-300";
+    usos.className = "mt-2 font-mono text-[11px] tono-exito";
     usos.textContent = "✨ Normaliza el campo: " + fuente.usos.join(", ");
     arriba.appendChild(usos);
   }
@@ -1353,7 +1539,7 @@ function tarjetaFuente(fuente, prueba) {
         prueba.ok
           ? "● " + prueba.ms + " ms"
           : "sin respuesta" + (prueba.estado ? " · HTTP " + prueba.estado : ""),
-        prueba.ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-amber-500/40 text-amber-300"
+        prueba.ok ? "borde-exito fondo-exito tono-exito" : "borde-aviso tono-aviso"
       )
     );
   }
@@ -1386,7 +1572,7 @@ async function cargarFuentes(opciones) {
 
   let json = null;
   try {
-    const respuesta = await fetch("/api/fuentes?" + params.toString(), {
+    const respuesta = await fetchApi("/api/fuentes?" + params.toString(), {
       cache: "no-store",
     });
     json = await respuesta.json();
@@ -1427,7 +1613,7 @@ async function cargarFuentes(opciones) {
           " coincidencias de " +
           (json.github.total || 0) +
           " sin clave",
-        "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+        "borde-exito fondo-exito tono-exito"
       )
     );
     titulo.appendChild(insigniasDerecha);
@@ -1487,7 +1673,7 @@ async function cargarFuentes(opciones) {
       )
     );
     pieGithub.appendChild(
-      enlace("Política de Privacidad", "/privacidad", "text-stone hover:text-ivory")
+      enlace("Política de Privacidad", urlApi("/privacidad"), "text-stone hover:text-ivory")
     );
     bloque.appendChild(pieGithub);
     fuentesCaja.appendChild(bloque);
@@ -1523,11 +1709,175 @@ if (probarFuentesBoton) {
   });
 }
 
+/* 9. Ajustes: servidor, apariencia y app nativa --------------------------- */
+
+const servidorInput = document.querySelector("#servidor-api");
+const guardarServidorBtn = document.querySelector("#guardar-servidor");
+const estadoServidor = document.querySelector("#estado-servidor");
+const pastillaServidor = document.querySelector("#pastilla-servidor");
+const textoServidor = document.querySelector("#texto-servidor");
+const botonCompartir = document.querySelector("#compartir-app");
+const botonLimpiar = document.querySelector("#limpiar-datos");
+const avisoRed = document.querySelector("#aviso-red");
+
+function anfitrionVisible() {
+  if (servidorApi) {
+    try {
+      return new URL(servidorApi).host;
+    } catch {
+      return servidorApi;
+    }
+  }
+  return location.host || "este dispositivo";
+}
+
+function pintarServidor() {
+  if (servidorInput) {
+    servidorInput.value = servidorApi;
+    servidorInput.placeholder = CONFIG.nativo
+      ? "https://tu-sitio.vercel.app"
+      : location.origin || "https://tu-sitio.vercel.app";
+  }
+  if (textoServidor) textoServidor.textContent = CONFIG.nativo ? "App" : "Nube";
+  if (pastillaServidor) pastillaServidor.title = "Servidor: " + (servidorApi || location.origin);
+}
+
+function aplicarServidor(valor, opciones) {
+  const limpio = normalizarServidor(valor);
+  const avisar = !opciones || opciones.avisar !== false;
+  if (valor && !limpio) {
+    if (estadoServidor) {
+      estadoServidor.textContent =
+        "Esa dirección no es válida. Escribe una URL completa con https://, por ejemplo https://tu-sitio.vercel.app";
+    }
+    return false;
+  }
+  servidorApi = limpio;
+  guardarPreferencia(CLAVE_SERVIDOR, limpio);
+  pintarServidor();
+  if (avisar && estadoServidor) {
+    estadoServidor.textContent = limpio
+      ? "Guardado. Las peticiones irán a " + limpio + "."
+      : "Usando el mismo origen de la web (" + location.origin + ").";
+  }
+  cargarTelemetria();
+  cargarLista();
+  if (!fuentesVacia()) cargarFuentes();
+  actualizarCodigoConsola();
+  if (!document.querySelector('[data-panel-vista="probar"]').classList.contains("activo")) {
+    /* la consola se ejecutará cuando el usuario entre; no gastamos peticiones */
+  } else {
+    ejecutarConsola();
+  }
+  return true;
+}
+
+if (guardarServidorBtn) {
+  guardarServidorBtn.addEventListener("click", () => {
+    const valor = servidorInput ? servidorInput.value.trim().replace(/\/+$/, "") : "";
+    if (!aplicarServidor(valor)) return;
+    guardarServidorBtn.textContent = "Guardado ✓";
+    setTimeout(() => (guardarServidorBtn.textContent = "Guardar"), 1800);
+  });
+}
+
+const reintentarConexion = document.querySelector("#reintentar-conexion");
+if (reintentarConexion) reintentarConexion.addEventListener("click", cargarTelemetria);
+
+if (botonCompartir) {
+  botonCompartir.addEventListener("click", async () => {
+    const destino = servidorApi || location.origin;
+    const datos = {
+      titulo: "Taller de APIs",
+      texto: "Diseña, publica y prueba APIs reales gratis desde el móvil.",
+      url: destino,
+    };
+    try {
+      if (window.TALLER_NATIVO && typeof window.TALLER_NATIVO.compartir === "function") {
+        await window.TALLER_NATIVO.compartir(datos);
+      } else if (navigator.share) {
+        await navigator.share(datos);
+      } else {
+        await navigator.clipboard.writeText(datos.url);
+        botonCompartir.textContent = "Enlace copiado ✓";
+        setTimeout(() => (botonCompartir.textContent = "Compartir"), 1800);
+      }
+    } catch {
+      /* el usuario canceló o no hay share disponible */
+    }
+  });
+}
+
+if (botonLimpiar) {
+  botonLimpiar.addEventListener("click", () => {
+    const seguro = window.confirm("¿Borrar tema, acento y servidor guardados en este dispositivo?");
+    if (!seguro) return;
+    for (const clave of ["taller:tema", "taller:acento", CLAVE_SERVIDOR]) guardarPreferencia(clave, null);
+    servidorApi = normalizarServidor(CONFIG.apiBase);
+    pintarServidor();
+    aplicarTema("tema-claro");
+    aplicarAcento("acento-indigo");
+    if (estadoServidor) estadoServidor.textContent = "Preferencias borradas. Se usan los valores por defecto.";
+    cargarTelemetria();
+  });
+}
+
+function pintarEstadoNativo(extra) {
+  const datos = extra || {};
+  const modo = document.querySelector("#nativo-modo");
+  const version = document.querySelector("#nativo-version");
+  const plataforma = document.querySelector("#nativo-plataforma");
+  const red = document.querySelector("#nativo-red");
+  if (modo) modo.textContent = CONFIG.nativo ? "App nativa" : "Web";
+  if (version) version.textContent = "v" + CONFIG.version;
+  if (plataforma) plataforma.textContent = datos.plataforma || (CONFIG.nativo ? "Capacitor" : "Navegador");
+  if (red) red.textContent = datos.red || (navigator.onLine ? "En línea" : "Sin conexión");
+}
+
+function vigilarRed(conectado) {
+  if (avisoRed) avisoRed.classList.toggle("hidden", conectado);
+  const red = document.querySelector("#nativo-red");
+  if (red) red.textContent = conectado ? "En línea" : "Sin conexión";
+  if (conectado) cargarTelemetria();
+}
+
+window.addEventListener("online", () => vigilarRed(true));
+window.addEventListener("offline", () => vigilarRed(false));
+
+async function iniciarNativo() {
+  pintarEstadoNativo();
+  if (!CONFIG.nativo) return;
+  const insignia = document.querySelector("#insignia-app");
+  if (insignia) insignia.classList.remove("hidden");
+  const ctaDescarga = document.querySelector("#cta-descarga");
+  if (ctaDescarga) {
+    ctaDescarga.textContent = "Compartir la app";
+    ctaDescarga.setAttribute("data-ir", "ajustes");
+  }
+  try {
+    const modulo = await import("./nativo.js");
+    if (modulo && typeof modulo.iniciarNativo === "function") {
+      const info = await modulo.iniciarNativo({
+        panel: () => panelActivo,
+        irA: (panel) => navegar(panel),
+        alCambiarRed: (conectado) => vigilarRed(conectado),
+      });
+      pintarEstadoNativo(info || {});
+    }
+  } catch (error) {
+    console.warn("No pude iniciar el puente nativo:", error);
+  }
+}
+
 /* Inicialización con escenario vivo para que nunca luzca vacío ----------- */
 
+pintarServidor();
+navegar(panelDelHash() || "inicio", { silencio: true });
 cargarEscenario(ESCENARIOS[0]);
 cargarTelemetria();
 cargarLista();
 actualizarCodigoConsola();
 ejecutarConsola("/api/ejemplo-notas/notas");
 if (fuentesCaja) cargarFuentes();
+vigilarRed(navigator.onLine !== false);
+iniciarNativo();

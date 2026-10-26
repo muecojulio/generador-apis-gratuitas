@@ -1,9 +1,9 @@
 # Pruebas automáticas de cada cambio.
 #
 # No despliega nada ni usa claves: comprueba que las pruebas pasan, que no hay
-# vulnerabilidades en dependencias de ejecución y que el CSS del repositorio es
-# el mismo que produce Tailwind hoy (para que ninguna clase nueva se quede sin
-# estilo).
+# vulnerabilidades en dependencias de ejecución, que la app nativa se empaqueta y
+# que el CSS del repositorio es el mismo que produce Tailwind hoy (para que
+# ninguna clase nueva se quede sin estilo).
 #
 # Coste: 0 (minutos gratuitos en repositorios públicos).
 
@@ -37,8 +37,13 @@ jobs:
       - name: Instalar herramientas de desarrollo
         run: npm ci
 
-      - name: Auditar dependencias
-        run: npm audit
+      # Se audita lo que se despliega: las funciones de api/ solo usan módulos
+      # de Node y lib/, así que no hay dependencias de ejecución. Las
+      # herramientas de compilación (Capacitor, esbuild, sharp, Tailwind) viven
+      # en devDependencies y nunca se publican; el CLI de Capacitor 6 arrastra
+      # `tar` 6.x con avisos conocidos que se resuelven al subir a Capacitor 8.
+      - name: Auditar dependencias de ejecución
+        run: npm audit --omit=dev
 
       - name: Ejecutar las pruebas
         env:
@@ -47,6 +52,16 @@ jobs:
 
       - name: Medir el rendimiento de los índices
         run: npm run medir
+
+      - name: Comprobar que la app nativa se empaqueta
+        env:
+          TALLER_SERVIDOR: ${{ vars.TALLER_SERVIDOR }}
+        run: |
+          npm run app:preparar
+          test -f app-web/index.html
+          test -f app-web/nativo.js
+          test -f app-web/configuracion.js
+          grep -q "nativo: true" app-web/configuracion.js
 
       - name: Comprobar que el CSS está al día
         run: |

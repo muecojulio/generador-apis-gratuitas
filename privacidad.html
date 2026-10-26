@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="tema-fragua">
+<html lang="es" class="tema-claro acento-indigo">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,6 +12,7 @@
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/estilos.css" />
+    <script src="/configuracion.js"></script>
     <link rel="preload" href="/assets/fuentes/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
@@ -19,18 +20,18 @@
     <header class="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-5 py-3.5">
         <a href="/" class="group flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/40 bg-panel shadow-brillo transition-transform group-hover:scale-105">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/30 bg-clay/10 transition-transform group-hover:scale-105">
             <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
-              <path d="M6 23h20" stroke="#f6f2e9" stroke-width="2" stroke-linecap="round" />
-              <path d="M10 18l6-9 6 9" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-              <circle cx="16" cy="11" r="4.8" fill="#e87a45" />
-              <circle cx="9" cy="23" r="2" fill="#34d399" />
-              <circle cx="23" cy="23" r="2" fill="#38bdf8" />
+              <path d="M6 23h20" stroke="currentColor" class="text-ivory/60" stroke-width="2" stroke-linecap="round" />
+              <path d="M10 18l6-9 6 9" fill="none" stroke="currentColor" class="text-clay" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="16" cy="11" r="4.6" fill="currentColor" class="text-clay" />
+              <circle cx="9" cy="23" r="2" fill="currentColor" class="text-clay" opacity="0.65" />
+              <circle cx="23" cy="23" r="2" fill="currentColor" class="text-clay" opacity="0.4" />
             </svg>
           </div>
           <div class="flex items-center gap-2">
             <span class="font-display text-xl tracking-tight text-ivory">Taller</span>
-            <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-300"
+            <span class="rounded-full border borde-exito fondo-exito px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider tono-exito"
               >Privacidad y Seguridad</span
             >
           </div>
@@ -54,13 +55,13 @@
           tipografías se sirven desde el propio dominio para no filtrar tu IP a CDNs de terceros.
         </p>
         <div class="mt-5 flex flex-wrap gap-2 text-xs">
-          <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-300">
+          <span class="rounded-full border borde-exito fondo-exito px-3 py-1 font-medium tono-exito">
             🍪 0 Cookies · 0 Rastreadores
           </span>
-          <span class="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 font-medium text-sky-300">
+          <span class="rounded-full border borde-info fondo-info px-3 py-1 font-medium tono-info">
             🔐 Tokens SHA-256 generados en tu navegador
           </span>
-          <span class="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 font-medium text-amber-300">
+          <span class="rounded-full border borde-aviso fondo-aviso px-3 py-1 font-medium tono-aviso">
             🛡️ CSP estricta · HSTS · Anti-fuerza bruta
           </span>
           <span class="rounded-full border border-clay/40 bg-clay/10 px-3 py-1 font-medium text-clay">
@@ -88,7 +89,17 @@
       </section>
 
       <div class="mt-8 grid gap-5 md:grid-cols-2">
-        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+        <section class="tarjeta rounded-2xl p-5 sm:p-6">
+          <h2 class="font-display text-xl">App nativa (Android e iOS)</h2>
+          <p class="mt-2 text-sm leading-relaxed text-stone">
+            La app nativa usa la misma interfaz y la misma política. Además guarda en el propio teléfono tus
+            preferencias (tema, acento y la dirección del servidor del taller) y consulta el estado de la red para
+            avisarte cuando no hay conexión. No accede a contactos, cámara, ubicación ni almacenamiento personal,
+            no incluye analítica ni publicidad y solo se conecta por HTTPS con el servidor que tú elijas.
+          </p>
+        </section>
+
+        <section class="tarjeta rounded-2xl p-5 sm:p-6">
           <h2 class="font-display text-2xl text-ivory">1. Quién es el responsable</h2>
           <p class="mt-3 text-sm leading-relaxed text-stone">
             El código fuente de <span class="text-ivory">generador-apis-gratuitas</span> se mantiene públicamente en
@@ -106,7 +117,7 @@
           </p>
         </section>
 
-        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+        <section class="tarjeta rounded-2xl p-5 sm:p-6">
           <h2 class="font-display text-2xl text-ivory">2. Finalidad y base legal</h2>
           <p class="mt-3 text-sm leading-relaxed text-stone">
             Tratamos únicamente los datos necesarios para generar el plano de tu API, guardarlo en el repositorio,
@@ -118,7 +129,7 @@
       </div>
 
       <div class="mt-5 space-y-5">
-        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+        <section class="tarjeta rounded-2xl p-5 sm:p-6">
           <h2 class="font-display text-2xl text-ivory">3. Qué datos se tratan y dónde viven</h2>
           <ul class="mt-3 space-y-3 text-sm leading-relaxed text-stone">
             <li>
@@ -157,7 +168,7 @@
           </ul>
         </section>
 
-        <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+        <section class="tarjeta rounded-2xl p-5 sm:p-6">
           <h2 class="font-display text-2xl text-ivory">4. Terceros y subencargados técnicos</h2>
           <div class="mt-3 overflow-x-auto">
             <table class="w-full border-collapse text-left text-sm">
@@ -200,7 +211,7 @@
         </section>
 
         <div class="grid gap-5 md:grid-cols-3">
-          <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <section class="tarjeta rounded-2xl p-5 sm:p-6">
             <h2 class="font-display text-xl text-ivory">5. Retención y borrado</h2>
             <p class="mt-3 text-sm leading-relaxed text-stone">
               Puedes borrar cualquier registro en tiempo real con
@@ -211,7 +222,7 @@
             </p>
           </section>
 
-          <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <section class="tarjeta rounded-2xl p-5 sm:p-6">
             <h2 class="font-display text-xl text-ivory">6. Seguridad activa</h2>
             <p class="mt-3 text-sm leading-relaxed text-stone">
               Todas las respuestas incluyen <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-xs text-ivory">CSP</code>,
@@ -223,7 +234,7 @@
             </p>
           </section>
 
-          <section class="tarjeta-viva rounded-[22px] p-5 sm:p-6">
+          <section class="tarjeta rounded-2xl p-5 sm:p-6">
             <h2 class="font-display text-xl text-ivory">7. Tus derechos (RGPD / ARCO)</h2>
             <p class="mt-3 text-sm leading-relaxed text-stone">
               Puedes ejercer tus derechos de acceso, rectificación, cancelación/supresión y oposición abriendo un

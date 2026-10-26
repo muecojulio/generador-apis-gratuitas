@@ -1,119 +1,183 @@
-// @ts-nocheck
-/**
- * Medición de los índices y de la caché.
- *
- *   npm run medir
- *
- * El taller no tiene una base de datos SQL: los datos viven en un JSON. Aun así,
- * conviene medir si «indexar» aporta algo antes de añadir complejidad. Este
- * script compara, con 5.000 registros (el máximo por recurso):
- *
- *   - buscar un registro por id: Array.find (lineal) frente a Map (directo)
- *   - filtrar por texto: repetir toLowerCase() en cada búsqueda frente al
- *     índice de texto preparado
- *   - leer lo mismo dos veces: sin caché frente a la caché del taller
- *
- * No es una prueba que deba fallar: solo informa. Los números son de tu equipo.
- */
-
 import { performance } from "node:perf_hooks";
 import indiceMod from "../lib/indice.js";
-import cache from "../lib/cache.js";
 
-const TOTAL = 5000;
-const consultas = 2000;
+const TAMANOS = [100, 500, 2000, 5000];
+const VUELTAS = 600;
+const CATEGORIAS = ["bebidas", "panaderia", "lacteos", "verduras", "postres", "especias"];
 
-const filas = Array.from({ length: TOTAL }, (_, i) => ({
-  id: "registro-" + i,
-  titulo: "Producto número " + i,
-  descripcion: "Una descripción de ejemplo con acentos: café, niño, acción.",
-  precio: i % 100,
-}));
-
-function medir(nombre, veces, fn) {
-  // Calentamiento: la primera vuelta paga la compilación del JIT.
-  fn(0);
-  const inicio = performance.now();
-  for (let i = 0; i < veces; i += 1) fn(i);
-  const ms = performance.now() - inicio;
-  return { nombre, ms, porOperacion: (ms / veces) * 1000 };
+function fabricarDatos(cantidad) {
+  const filas = [];
+  for (let i = 0; i < cantidad; i += 1) {
+    filas.push({
+      id: "reg-" + (i + 1),
+      creado: "2026-10-18T12:00:00.000Z",
+      nombre: i === cantidad - 1 ? "Camiseta de algodón orgánico" : "Producto de prueba número " + (i + 1),
+      categoria: CATEGORIAS[i % CATEGORIAS.length],
+      precio: ((i % 90) + 10) * 1.25,
+      activo: i % 3 !== 0,
+      notas: "Observación extensa sobre el artículo " + (i + 1) + " en el almacén central.",
+    });
+  }
+  return filas;
 }
 
-const buscados = Array.from({ length: consultas }, (_, i) => "registro-" + ((i * 7) % TOTAL));
+function medir(fn) {
+  const inicio = performance.now();
+  fn();
+  return performance.now() - inicio;
+}
 
-const sinIndice = medir("Array.find por id", consultas, (i) => {
-  const id = buscados[i % buscados.length];
-  const fila = filas.find((item) => item.id === id);
-  if (!fila) throw new Error("no encontrado");
-});
+console.log("Comparación de búsqueda lineal frente al índice en memoria (lib/indice.js)");
+console.log("Cada prueba repite " + VUELTAS + " consultas sobre el mismo conjunto de registros.\n");
 
-const indice = indiceMod.crearIndice(filas);
-const conIndice = medir("Map por id", consultas, (i) => {
-  const fila = indice.obtener(buscados[i % buscados.length]);
-  if (!fila) throw new Error("no encontrado");
-});
+for (const n of TAMANOS) {
+  const datos = fabricarDatos(n);
+  const ultimoId = "reg-" + n;
+  const mitadId = "reg-" + Math.ceil(n / 2);
 
-const busquedaVieja = medir("buscar (texto, sin índice)", 50, () => {
-  const aguja = "café";
-  const encontradas = filas.filter((fila) =>
-    Object.entries(fila).some(
-      ([clave, valor]) => clave !== "id" && String(valor).toLowerCase().includes(aguja)
-    )
+  let tiempoConstruir = 0;
+  let indice = null;
+  tiempoConstruir = medir(() => {
+    indice = indiceMod.crearIndice(datos);
+  });
+
+  // 1. Por ID al final de la lista (peor caso del recorrido lineal).
+  const idSinIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const hallado = datos.find((item) => item.id === ultimoId);
+      if (!hallado) throw new Error("No hallado");
+    }
+  });
+  const idConIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const hallado = indice.obtener(ultimoId);
+      if (!hallado) throw new Error("No hallado");
+    }
+  });
+
+  // 2. Posición física para DELETE (findIndex vs indice.posicion).
+  const posSinIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const pos = datos.findIndex((item) => item.id === ultimoId);
+      if (pos === -1) throw new Error("No hallado");
+    }
+  });
+  const posConIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const pos = indice.posicion(ultimoId);
+      if (pos === -1) throw new Error("No hallado");
+    }
+  });
+
+  // 3. Filtro exacto por campo secundario (?categoria=especias).
+  const campoSinIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const lista = datos.filter((item) => String(item.categoria).toLowerCase() === "especias");
+      if (!lista.length) throw new Error("Sin resultados");
+    }
+  });
+  const campoConIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const lista = indice.filtrarPorCampo("categoria", "especias");
+      if (!lista.length) throw new Error("Sin resultados");
+    }
+  });
+
+  // 4. Filtro compuesto por varios campos (?categoria=especias&activo=true).
+  const compuestoSinIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const lista = datos.filter(
+        (item) => String(item.categoria).toLowerCase() === "especias" && item.activo === true
+      );
+      if (!lista.length) throw new Error("Sin resultados");
+    }
+  });
+  const compuestoConIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const lista = indice.filtrar({ categoria: "especias", activo: "true" });
+      if (!lista.length) throw new Error("Sin resultados");
+    }
+  });
+
+  // 5. Búsqueda de texto libre (?buscar=algodón).
+  const textoSinIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      const aguja = "algodón".toLowerCase();
+      const lista = datos.filter((item) => JSON.stringify(item).toLowerCase().includes(aguja));
+      if (lista.length !== 1) throw new Error("Resultado inesperado");
+    }
+  });
+  const textoConIndice = medir(() => {
+    for (let v = 0; v < VUELTAS; v += 1) {
+      // Con el índice se encuentra aunque quien busca escriba sin tilde.
+      const lista = indice.buscar("algodon");
+      if (lista.length !== 1) throw new Error("Resultado inesperado");
+    }
+  });
+
+  if (indice.obtener(mitadId).id !== mitadId) throw new Error("Índice inconsistente");
+
+  const gananciaId = (idSinIndice / Math.max(idConIndice, 0.01)).toFixed(1);
+  const gananciaPos = (posSinIndice / Math.max(posConIndice, 0.01)).toFixed(1);
+  const gananciaCampo = (campoSinIndice / Math.max(campoConIndice, 0.01)).toFixed(1);
+  const gananciaCompuesto = (compuestoSinIndice / Math.max(compuestoConIndice, 0.01)).toFixed(1);
+  const gananciaTexto = (textoSinIndice / Math.max(textoConIndice, 0.01)).toFixed(1);
+  const est = indice.estadisticas();
+
+  console.log(
+    "Registros: " +
+      n +
+      " | construir índice: " +
+      tiempoConstruir.toFixed(2) +
+      " ms (campos indexados: " +
+      est.camposIndexados +
+      ", trigramas únicos: " +
+      est.trigramasUnicos +
+      ")"
   );
-  if (!encontradas.length) throw new Error("sin resultados");
-});
-
-const busquedaNueva = medir("buscar (texto, con índice)", 50, () => {
-  const encontradas = indice.buscar("cafe");
-  if (!encontradas.length) throw new Error("sin resultados");
-});
-
-// La caché no gana por copiar un objeto: gana por evitar la ida y vuelta a
-// GitHub. Se simula una lectura remota de 5 ms (en producción son 200–600 ms).
-const dormir = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
-
-cache.limpiar();
-const inicioSin = performance.now();
-for (let i = 0; i < 20; i += 1) await dormir(5);
-const sinCache = { ms: performance.now() - inicioSin };
-
-cache.poner("prueba", { datos: filas }, 60000);
-const inicioCon = performance.now();
-for (let i = 0; i < 20; i += 1) cache.obtener("prueba");
-const conCache = { ms: performance.now() - inicioCon };
-
-// Single flight: diez peticiones simultáneas de la misma clave -> una sola carga.
-cache.borrar("unica");
-let ejecuciones = 0;
-await Promise.all(
-  Array.from({ length: 10 }, () =>
-    cache.recordar("unica", 60000, async () => {
-      ejecuciones += 1;
-      await dormir(5);
-      return "valor";
-    })
-  )
-);
-
-const factor = (a, b) => (a.ms / Math.max(b.ms, 0.0001)).toFixed(1) + "×";
-
-console.log("Registros: " + TOTAL + " · consultas: " + consultas + "\n");
-console.log("Índice por id");
-console.log("  Array.find : " + sinIndice.ms.toFixed(1) + " ms (" + sinIndice.porOperacion.toFixed(2) + " µs/consulta)");
-console.log("  Map        : " + conIndice.ms.toFixed(1) + " ms (" + conIndice.porOperacion.toFixed(2) + " µs/consulta)");
-console.log("  Ventaja    : " + factor(sinIndice, conIndice) + " más rápido con índice\n");
-console.log("Búsqueda de texto (50 consultas)");
-console.log("  Sin índice : " + busquedaVieja.ms.toFixed(1) + " ms");
-console.log("  Con índice : " + busquedaNueva.ms.toFixed(1) + " ms");
-console.log("  Ventaja    : " + factor(busquedaVieja, busquedaNueva) + " más rápido con índice\n");
-console.log("Caché (20 lecturas; remoto simulado de 5 ms)");
-console.log("  Sin caché  : " + sinCache.ms.toFixed(2) + " ms");
-console.log("  Con caché  : " + conCache.ms.toFixed(2) + " ms");
-console.log("  Ventaja    : " + factor(sinCache, conCache) + " menos tiempo\n");
-console.log("Single flight (10 peticiones a la vez de la misma clave)");
-console.log("  Cargas reales: " + ejecuciones + " (debería ser 1)\n");
-console.log("Caché del taller:", JSON.stringify(cache.estadisticas()));
-console.log(
-  "\nNota: el índice se construye una vez por lectura y se guarda ligado al sha del archivo;" +
-    " cuando los datos no cambian, no se vuelve a construir."
-);
+  console.log(
+    "  obtener(id)       sin índice: " +
+      idSinIndice.toFixed(2).padStart(7) +
+      " ms | con índice: " +
+      idConIndice.toFixed(2).padStart(6) +
+      " ms (" +
+      gananciaId +
+      "× más rápido)"
+  );
+  console.log(
+    "  posicion(id)      sin índice: " +
+      posSinIndice.toFixed(2).padStart(7) +
+      " ms | con índice: " +
+      posConIndice.toFixed(2).padStart(6) +
+      " ms (" +
+      gananciaPos +
+      "× más rápido)"
+  );
+  console.log(
+    "  filtrarPorCampo   sin índice: " +
+      campoSinIndice.toFixed(2).padStart(7) +
+      " ms | con índice: " +
+      campoConIndice.toFixed(2).padStart(6) +
+      " ms (" +
+      gananciaCampo +
+      "× más rápido)"
+  );
+  console.log(
+    "  filtrar(2 campos) sin índice: " +
+      compuestoSinIndice.toFixed(2).padStart(7) +
+      " ms | con índice: " +
+      compuestoConIndice.toFixed(2).padStart(6) +
+      " ms (" +
+      gananciaCompuesto +
+      "× más rápido)"
+  );
+  console.log(
+    "  buscar(texto)     sin índice: " +
+      textoSinIndice.toFixed(2).padStart(7) +
+      " ms | con índice: " +
+      textoConIndice.toFixed(2).padStart(6) +
+      " ms (" +
+      gananciaTexto +
+      "× más rápido, y sin distinguir tildes)\n"
+  );
+}

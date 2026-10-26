@@ -114,7 +114,7 @@ jobs:
     env:
       NOMBRE: ${{ github.event.client_payload.nombre || inputs.nombre }}
       DESCRIPCION: ${{ github.event.client_payload.descripcion || inputs.descripcion }}
-      PROVEEDOR: ${{ inputs.proveedor || 'auto' }}
+      GENERADOR_PROVEEDOR: ${{ github.event.client_payload.proveedor || inputs.proveedor || 'auto' }}
       SOLO_LECTURA: ${{ github.event.client_payload.soloLectura || inputs.solo_lectura || '' }}
       LIMITES: ${{ github.event.client_payload.limites || inputs.limites || '' }}
       TOKEN_ACCION: ${{ github.event.client_payload.tokenAccion || inputs.token_accion || '' }}
@@ -143,7 +143,6 @@ jobs:
       - name: Diseñar la API y escribir su carpeta
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GENERADOR_PROVEEDOR: ${{ inputs.proveedor }}
         run: node scripts/disenar.mjs
 
       - name: Comprobar que la API responde

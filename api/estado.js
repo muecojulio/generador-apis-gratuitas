@@ -42,11 +42,17 @@ function corridasDeGitHub() {
 module.exports = async function handler(req, res) {
   const metodo = String((req && req.method) || "GET").toUpperCase();
   if (metodo === "OPTIONS") {
-    http.enviarJson(req, res, 204, {}, { publico: true });
+    http.enviarJson(req, res, 204, {}, { publico: false, cabeceras: { "X-Robots-Tag": "noindex" } });
     return;
   }
   if (metodo !== "GET" && metodo !== "HEAD") {
-    http.enviarJson(req, res, 405, { error: "Usa GET." }, { publico: true, cabeceras: { Allow: "GET, HEAD, OPTIONS" } });
+    http.enviarJson(
+      req,
+      res,
+      405,
+      { error: "Usa GET." },
+      { publico: false, cabeceras: { Allow: "GET, HEAD, OPTIONS", "X-Robots-Tag": "noindex" } }
+    );
     return;
   }
 
@@ -96,5 +102,10 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  http.enviarJson(req, res, 200, salida, { publico: true, cache: 10, etag: true });
+  http.enviarJson(req, res, 200, salida, {
+    publico: false,
+    cache: 10,
+    etag: true,
+    cabeceras: { "X-Robots-Tag": "noindex" },
+  });
 };

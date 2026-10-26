@@ -1,0 +1,37 @@
+{
+  "appId": "app.taller.apis",
+  "appName": "Taller de APIs",
+  "webDir": "app-web",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "hostname": "localhost"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f5f7fb"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#f5f7fb"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#f5f7fb",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#ffffff",
+      "overlaysWebView": false
+    },
+    "Keyboard": {
+      "resize": "native"
+    }
+  }
+}

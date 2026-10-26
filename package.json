@@ -2,7 +2,7 @@
   "name": "generador-apis-gratuitas",
   "version": "1.0.0",
   "private": true,
-  "description": "Taller que convierte una descripción en una API publicada, usando solo planes gratuitos.",
+  "description": "Estudio de APIs gratuitas: diseñador, consola y app nativa para Android e iOS.",
   "type": "commonjs",
   "engines": {
     "node": "22.x"
@@ -15,16 +15,38 @@
     "proveedores": "node scripts/probar-proveedores.mjs",
     "fuentes": "node scripts/sincronizar-fuentes.mjs",
     "css": "tailwindcss -c tailwind.config.js -i assets/tailwind.css -o assets/estilos.css --minify",
-    "medir": "node scripts/medir-indices.mjs"
+    "medir": "node scripts/medir-indices.mjs",
+    "app:preparar": "node scripts/construir-app.mjs",
+    "app:sync": "node scripts/construir-app.mjs --sync",
+    "app:android": "node scripts/construir-app.mjs --sync && cap open android",
+    "app:ios": "node scripts/construir-app.mjs --sync && cap open ios",
+    "app:apk": "node scripts/construir-app.mjs --sync && cd android && ./gradlew assembleDebug",
+    "app:iconos": "node scripts/generar-iconos.mjs"
   },
   "license": "MIT",
   "devDependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/outfit": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5",
     "tailwindcss": "^3.4.17"
   },
   "overrides": {
     "postcss-nested": "^9.0.1",
     "postcss-selector-parser": "^7.1.7"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/browser": "^6.0.6",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/ios": "^6.2.2",
+    "@capacitor/keyboard": "^6.0.4",
+    "@capacitor/network": "^6.0.4",
+    "@capacitor/share": "^6.0.4",
+    "@capacitor/splash-screen": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3"
   }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="tema-fragua">
+<html lang="es" class="tema-claro acento-indigo">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,7 @@
     <meta name="twitter:card" content="summary" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/estilos.css" />
+    <script src="/configuracion.js"></script>
     <link rel="preload" href="/assets/fuentes/outfit-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/assets/fuentes/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin />
   </head>
@@ -27,18 +28,18 @@
     <header class="sticky top-0 z-30 border-b border-line/80 bg-ink/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-3.5">
         <a href="/" class="group flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/40 bg-panel shadow-brillo transition-transform group-hover:scale-105">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-clay/30 bg-clay/10 transition-transform group-hover:scale-105">
             <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
-              <path d="M6 23h20" stroke="#f6f2e9" stroke-width="2" stroke-linecap="round" />
-              <path d="M10 18l6-9 6 9" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-              <circle cx="16" cy="11" r="4.8" fill="#e87a45" />
-              <circle cx="9" cy="23" r="2" fill="#34d399" />
-              <circle cx="23" cy="23" r="2" fill="#38bdf8" />
+              <path d="M6 23h20" stroke="currentColor" class="text-ivory/60" stroke-width="2" stroke-linecap="round" />
+              <path d="M10 18l6-9 6 9" fill="none" stroke="currentColor" class="text-clay" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="16" cy="11" r="4.6" fill="currentColor" class="text-clay" />
+              <circle cx="9" cy="23" r="2" fill="currentColor" class="text-clay" opacity="0.65" />
+              <circle cx="23" cy="23" r="2" fill="currentColor" class="text-clay" opacity="0.4" />
             </svg>
           </div>
           <div class="flex items-center gap-2">
             <span class="font-display text-xl tracking-tight text-ivory">Taller</span>
-            <span class="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-sky-300"
+            <span class="rounded-full border borde-info fondo-info px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider tono-info"
               >OpenAPI Studio</span
             >
           </div>
@@ -61,24 +62,19 @@
         <div class="flex items-center gap-1.5 rounded-full border border-line bg-panel/90 p-1 text-xs" role="group" aria-label="Atmósfera visual">
           <button
             type="button"
-            data-tema="tema-fragua"
-            class="boton-tema rounded-full px-2.5 py-1 font-medium transition-all chip-activo"
+            data-tema="tema-claro"
+            class="boton-tema chip-interactivo rounded-full px-2.5 py-1 font-medium"
+            title="Tema claro"
           >
-            🔥 Fragua
+            ☀️ Claro
           </button>
           <button
             type="button"
-            data-tema="tema-nebulosa"
-            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
+            data-tema="tema-oscuro"
+            class="boton-tema chip-interactivo rounded-full px-2.5 py-1 font-medium text-stone"
+            title="Tema oscuro"
           >
-            🌌 Nebulosa
-          </button>
-          <button
-            type="button"
-            data-tema="tema-bosque"
-            class="boton-tema rounded-full px-2.5 py-1 font-medium text-stone transition-all hover:text-ivory"
-          >
-            🌿 Bio
+            🌙 Oscuro
           </button>
         </div>
       </div>

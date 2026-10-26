@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta del Taller de APIs: índigo profesional sobre lienzo claro. -->
+    <color name="colorPrimary">#4F46E5</color>
+    <color name="colorPrimaryDark">#4338CA</color>
+    <color name="colorAccent">#22D3EE</color>
+    <color name="taller_fondo">#F5F7FB</color>
+    <color name="taller_tinta">#0F172A</color>
+    <color name="splash_background">#F5F7FB</color>
+</resources>

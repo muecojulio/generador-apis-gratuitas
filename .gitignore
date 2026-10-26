@@ -2,3 +2,11 @@ node_modules
 .vercel
 .DS_Store
 *.log
+
+# Salidas de la app nativa (se generan con npm run app:preparar)
+app-web/
+android/app/build/
+android/.gradle/
+ios/App/Pods/
+*.apk
+*.aab

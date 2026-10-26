@@ -7,6 +7,16 @@ Este proyecto es una herramienta de código abierto que diseña, documenta y pub
 
 ---
 
+## La app nativa (Android e iOS)
+
+La aplicación nativa incluye la misma interfaz y respeta esta política. Añade únicamente:
+
+- **Preferencias locales** en el dispositivo: tema, color de acento y dirección del servidor del taller.
+  Se borran desde *Ajustes → Borrar preferencias* o desinstalando la app.
+- **Estado de la red** (solo si hay conexión) para avisarte cuando estás sin conexión.
+- **Ningún permiso** de cámara, micrófono, ubicación, contactos ni almacenamiento externo. Solo `INTERNET`.
+- **Sin analítica, sin publicidad y sin rastreadores**, igual que la versión web.
+
 ## 1. Responsable del tratamiento y alcance
 
 - **Proyecto de código abierto**: [`muecojulio/generador-apis-gratuitas`](https://github.com/muecojulio/generador-apis-gratuitas).

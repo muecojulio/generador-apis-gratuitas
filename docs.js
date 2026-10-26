@@ -4,10 +4,10 @@
 
 const METODOS = ["get", "post", "put", "delete"];
 const COLORES = {
-  get: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  post: "border-sky-500/40 bg-sky-500/15 text-sky-300",
-  put: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  delete: "border-rose-500/40 bg-rose-500/15 text-rose-300",
+  get: "borde-exito fondo-exito tono-exito",
+  post: "borde-info fondo-info tono-info",
+  put: "borde-aviso fondo-aviso tono-aviso",
+  delete: "borde-peligro fondo-peligro tono-peligro",
 };
 const BOTON =
   "chip-interactivo rounded-lg px-3 py-2 text-xs text-ivory disabled:cursor-not-allowed disabled:opacity-50";
@@ -23,18 +23,18 @@ let apis = [];
 
 /* Selector de atmósfera visual sincronizado con la portada ---------------- */
 
-const TEMAS = ["tema-fragua", "tema-nebulosa", "tema-bosque"];
+const TEMAS = ["tema-claro", "tema-oscuro"];
 const botonesTema = document.querySelectorAll(".boton-tema");
 
 function aplicarTema(tema) {
-  const elegido = TEMAS.includes(tema) ? tema : "tema-fragua";
+  const elegido = TEMAS.includes(tema) ? tema : "tema-claro";
   const raiz = document.documentElement;
   for (const clase of TEMAS) raiz.classList.remove(clase);
   raiz.classList.add(elegido);
   for (const boton of botonesTema) {
     const activo = boton.getAttribute("data-tema") === elegido;
     boton.className =
-      "boton-tema rounded-full px-2.5 py-1 font-medium transition-all " +
+      "boton-tema chip-interactivo rounded-full px-2.5 py-1 font-medium transition-all " +
       (activo ? "chip-activo" : "text-stone hover:text-ivory");
   }
   try {
@@ -245,7 +245,7 @@ function renderIndice() {
     contenido.appendChild(
       h(
         "div",
-        { class: "tarjeta-viva rounded-[24px] p-6" },
+        { class: "tarjeta rounded-2xl p-6" },
         h("h2", { class: "font-display text-2xl" }, "Todavía no hay APIs publicadas"),
         h(
           "p",
@@ -268,7 +268,7 @@ function renderIndice() {
   const rejilla = h("div", { class: "grid gap-5 md:grid-cols-2 lg:grid-cols-3" });
   for (const api of apis) {
     const ficha = h("article", {
-      class: "tarjeta-viva tarjeta-elevada flex flex-col justify-between rounded-[22px] p-5",
+      class: "tarjeta tarjeta-elevada flex flex-col justify-between rounded-2xl p-5",
     });
     const superior = h("div", {});
     const encabezado = h("div", { class: "flex flex-wrap items-start justify-between gap-2" });
@@ -283,16 +283,16 @@ function renderIndice() {
       )
     );
     superior.appendChild(encabezado);
-    superior.appendChild(h("p", { class: "mt-1 font-mono text-xs text-emerald-300" }, "/api/" + api.nombre));
+    superior.appendChild(h("p", { class: "mt-1 font-mono text-xs tono-exito" }, "/api/" + api.nombre));
     if (api.resumen) {
       superior.appendChild(h("p", { class: "mt-2 text-sm leading-relaxed text-stone" }, api.resumen));
     }
 
     const marcas = h("div", { class: "mt-3 flex flex-wrap gap-2" });
-    if (api.soloLectura) marcas.appendChild(insignia("Solo lectura", "border-amber-500/40 text-amber-300"));
+    if (api.soloLectura) marcas.appendChild(insignia("Solo lectura", "borde-aviso tono-aviso"));
     if (api.protegida) {
       marcas.appendChild(
-        insignia("Token · " + (api.modoToken === "todo" ? "todo" : "escritura"), "border-sky-500/40 text-sky-300")
+        insignia("Token · " + (api.modoToken === "todo" ? "todo" : "escritura"), "borde-info tono-info")
       );
     }
     if (api.recursos && api.recursos.length) {
@@ -359,7 +359,7 @@ function renderIndice() {
   }
   contenido.appendChild(rejilla);
 
-  const extras = h("section", { id: "fuentes-publicas", class: "tarjeta-viva mt-8 rounded-[24px] p-6" });
+  const extras = h("section", { id: "fuentes-publicas", class: "tarjeta mt-8 rounded-2xl p-6" });
   extras.appendChild(h("h2", { class: "font-display text-2xl" }, "Fuentes públicas y cadena de modelos IA"));
   extras.appendChild(
     h(
@@ -398,7 +398,7 @@ function panelAuth(x, nombre) {
     return {
       nodo: h(
         "section",
-        { class: "tarjeta-viva rounded-[22px] p-5" },
+        { class: "tarjeta rounded-2xl p-5" },
         h("h2", { class: "font-display text-2xl" }, "🔓 Acceso Abierto (Sin token)"),
         h(
           "p",
@@ -465,7 +465,7 @@ function panelAuth(x, nombre) {
   return {
     nodo: h(
       "section",
-      { class: "tarjeta-viva rounded-[22px] p-5" },
+      { class: "tarjeta rounded-2xl p-5" },
       h("h2", { class: "font-display text-2xl" }, "🔐 Protección por Token SHA-256"),
       h("p", { class: "mt-2 text-sm leading-relaxed text-stone" }, modo),
       h(
@@ -494,7 +494,7 @@ function panelLimites(x) {
   const limites = x.limites || {};
   return h(
     "section",
-    { class: "tarjeta-viva rounded-[22px] p-5" },
+    { class: "tarjeta rounded-2xl p-5" },
     h("h2", { class: "font-display text-2xl" }, "⚖️ Cuotas y Retención"),
     h(
       "p",
@@ -550,7 +550,7 @@ function tablaEsquema(recurso, esquema) {
               )
             : null
         ),
-        h("td", { class: "py-2.5 pr-3 font-mono text-xs text-sky-300" }, tipo),
+        h("td", { class: "py-2.5 pr-3 font-mono text-xs tono-info" }, tipo),
         h(
           "td",
           { class: "py-2.5 pr-3 text-xs " + (requeridos.has(nombre) ? "font-semibold text-clay" : "text-stone") },
@@ -562,7 +562,7 @@ function tablaEsquema(recurso, esquema) {
   }
   return h(
     "div",
-    { class: "tarjeta-viva mt-3 overflow-x-auto rounded-2xl p-4" },
+    { class: "tarjeta mt-3 overflow-x-auto rounded-2xl p-4" },
     h(
       "table",
       { class: "w-full min-w-[520px] text-left" },
@@ -642,7 +642,7 @@ function snippetDe(lenguaje, metodo, ruta, op) {
 }
 
 function tarjetaEndpoint(ruta, metodo, op, token) {
-  const tarjeta = h("article", { class: "tarjeta-viva rounded-2xl p-5" });
+  const tarjeta = h("article", { class: "tarjeta rounded-2xl p-5" });
   const cabecera = h("div", { class: "flex flex-wrap items-center gap-3" });
   cabecera.appendChild(
     h(
@@ -653,7 +653,7 @@ function tarjetaEndpoint(ruta, metodo, op, token) {
   );
   cabecera.appendChild(h("code", { class: "break-all font-mono text-sm text-ivory" }, ruta));
   if (op.security) {
-    cabecera.appendChild(insignia("🔐 token", "border-sky-500/40 text-sky-300"));
+    cabecera.appendChild(insignia("🔐 token", "borde-info tono-info"));
   }
   tarjeta.appendChild(cabecera);
   tarjeta.appendChild(h("p", { class: "mt-2 text-sm font-medium text-ivory" }, op.summary || ""));
@@ -746,7 +746,7 @@ function tarjetaEndpoint(ruta, metodo, op, token) {
 
     const salida = h("pre", {
       class:
-        "consola-terminal mt-3 hidden overflow-x-auto whitespace-pre-wrap break-words rounded-xl p-3 font-mono text-[11px] leading-relaxed text-emerald-200",
+        "consola-terminal mt-3 hidden overflow-x-auto whitespace-pre-wrap break-words rounded-xl p-3 font-mono text-[11px] leading-relaxed tono-exito",
     });
 
     acciones.appendChild(
@@ -757,7 +757,7 @@ function tarjetaEndpoint(ruta, metodo, op, token) {
           for (const { parametro, entrada } of camposRuta) {
             if (!entrada.value.trim()) {
               salida.className =
-                "mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 font-mono text-[11px] leading-relaxed text-amber-200";
+                "mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border borde-aviso fondo-aviso p-3 font-mono text-[11px] leading-relaxed tono-aviso";
               salida.textContent = "Escribe «" + parametro.name + "» para probar.";
               return;
             }
@@ -775,14 +775,14 @@ function tarjetaEndpoint(ruta, metodo, op, token) {
             const clave = token && token.entrada && token.entrada.value.trim();
             if (!clave) {
               salida.className =
-                "mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 font-mono text-[11px] leading-relaxed text-amber-200";
+                "mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl border borde-aviso fondo-aviso p-3 font-mono text-[11px] leading-relaxed tono-aviso";
               salida.textContent = "Escribe tu token en el panel de arriba y vuelve a probar.";
               return;
             }
             cabeceras.Authorization = "Bearer " + clave;
           }
           salida.className =
-            "consola-terminal mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl p-3 font-mono text-[11px] leading-relaxed text-emerald-200";
+            "consola-terminal mt-3 overflow-x-auto whitespace-pre-wrap break-words rounded-xl p-3 font-mono text-[11px] leading-relaxed tono-exito";
           salida.textContent = "⏳ Consultando…";
           const t0 = performance.now();
           try {
@@ -823,19 +823,19 @@ function renderDocumento(nombre, doc) {
 
   const meta = h("div", { class: "flex flex-wrap gap-2" });
   meta.appendChild(insignia("/api/" + nombre, "border-clay/50 text-clay font-mono"));
-  if (x.soloLectura) meta.appendChild(insignia("Solo lectura", "border-amber-500/40 text-amber-300"));
+  if (x.soloLectura) meta.appendChild(insignia("Solo lectura", "borde-aviso tono-aviso"));
   if (x.autenticacion) {
     meta.appendChild(
       insignia(
         "Token · " + (x.autenticacion.modo === "todo" ? "todo" : "escritura"),
-        "border-sky-500/40 text-sky-300"
+        "borde-info tono-info"
       )
     );
   }
   meta.appendChild(insignia("OpenAPI " + (doc.openapi || "3.0.3")));
   if (x.normalizacion && x.normalizacion.campos) {
     meta.appendChild(
-      insignia("✨ Normaliza " + x.normalizacion.campos.join(", "), "border-emerald-500/40 text-emerald-300")
+      insignia("✨ Normaliza " + x.normalizacion.campos.join(", "), "borde-exito tono-exito")
     );
   }
   contenido.appendChild(meta);
@@ -925,7 +925,7 @@ function renderDocumento(nombre, doc) {
     contenido.appendChild(
       h(
         "div",
-        { class: "tarjeta-viva mt-8 rounded-2xl p-5 text-sm text-stone" },
+        { class: "tarjeta mt-8 rounded-2xl p-5 text-sm text-stone" },
         "Esta API no publicó rutas todavía. Revisa su manifiesto."
       )
     );
@@ -944,7 +944,7 @@ async function cargarDocumento(nombre) {
       contenido.appendChild(
         h(
           "div",
-          { class: "tarjeta-viva rounded-[22px] p-5" },
+          { class: "tarjeta rounded-2xl p-5" },
           h("p", { class: "text-sm leading-relaxed text-stone" }, "No encontré /api/" + nombre + "/openapi.json."),
           h(
             "div",
@@ -959,14 +959,14 @@ async function cargarDocumento(nombre) {
     if (!respuesta.ok || !json) {
       avisar(
         "No pude leer el documento OpenAPI (HTTP " + respuesta.status + ").",
-        "border-rose-500/40 bg-rose-500/5 text-rose-200"
+        "borde-peligro fondo-peligro tono-peligro"
       );
       return;
     }
     ocultarAviso();
     renderDocumento(nombre, json);
   } catch (error) {
-    avisar("No pude leer la documentación: " + (error.message || error), "border-rose-500/40 bg-rose-500/5 text-rose-200");
+    avisar("No pude leer la documentación: " + (error.message || error), "borde-peligro fondo-peligro tono-peligro");
   }
 }
 

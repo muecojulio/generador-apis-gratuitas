@@ -31,6 +31,7 @@ const ESTATICOS = {
   "/docs": "docs.html",
   "/docs.html": "docs.html",
   "/docs.js": "docs.js",
+  "/configuracion.js": "configuracion.js",
   "/favicon.svg": "favicon.svg",
   "/lib/motor.mjs": "lib/motor.mjs",
   "/robots.txt": "robots.txt",

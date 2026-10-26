@@ -769,6 +769,19 @@ const resProd304 = llamada("GET", "/api/multi-recurso/productos", undefined, {
 await handlerMulti(resProd304.req, resProd304.res);
 assert.equal(resProd304.res.statusCode, 304, "la lista de un recurso responde 304 con If-None-Match");
 
+// La semilla (sin datos guardados todavía) es estable: dos lecturas seguidas
+// devuelven el mismo cuerpo y el mismo ETag, así el 304 no depende del reloj.
+const handlerSemilla = crear(specMulti, { almacen: memoria() });
+const semillaUno = llamada("GET", "/api/multi-recurso/productos");
+await handlerSemilla(semillaUno.req, semillaUno.res);
+const semillaDos = llamada("GET", "/api/multi-recurso/productos");
+await handlerSemilla(semillaDos.req, semillaDos.res);
+assert.equal(
+  semillaDos.headers.ETag,
+  semillaUno.headers.ETag,
+  "la semilla debe ser estable entre lecturas para que el ETag y el 304 funcionen"
+);
+
 const resCat = llamada("GET", "/api/multi-recurso/categorias");
 await handlerMulti(resCat.req, resCat.res);
 const jsonCat = await resCat.json();
@@ -1295,6 +1308,54 @@ if (fs.existsSync(cliCss)) {
 }
 const htmlIndice = fs.readFileSync(path.join(RAIZ, "index.html"), "utf8");
 assert.ok(htmlIndice.includes('href="/privacidad"'), "la portada enlaza la privacidad");
+
+// --- Diseño y app nativa: una sola interfaz para web, Android e iOS.
+assert.ok(htmlIndice.includes('src="/configuracion.js"'), "la portada carga la configuración de entorno");
+for (const panel of ["inicio", "disenar", "probar", "apis", "fuentes", "ajustes"]) {
+  assert.ok(
+    htmlIndice.includes('data-panel-vista="' + panel + '"'),
+    "la portada debe tener la pestaña " + panel
+  );
+}
+assert.ok(htmlIndice.includes('data-panel="disenar"'), "la navegación lateral cambia de pestaña");
+assert.ok(/tema-claro/.test(htmlIndice), "el tema claro debe existir");
+const cssDelSitio = fs.readFileSync(path.join(RAIZ, "assets/estilos.css"), "utf8");
+for (const clase of ["tono-exito", "tono-aviso", "nav-enlace", "tarjeta-destacada", "consola-terminal"]) {
+  assert.ok(cssDelSitio.includes("." + clase), "el CSS debe incluir " + clase);
+}
+assert.ok(cssDelSitio.includes("--c-clay"), "el acento viaja por variables CSS");
+assert.ok(fs.existsSync(path.join(RAIZ, "configuracion.js")), "falta configuracion.js");
+
+// La app nativa: Capacitor con proyectos de Android e iOS de verdad.
+const capacitor = JSON.parse(fs.readFileSync(path.join(RAIZ, "capacitor.config.json"), "utf8"));
+assert.equal(capacitor.appId, "app.taller.apis");
+assert.equal(capacitor.webDir, "app-web");
+assert.ok(fs.existsSync(path.join(RAIZ, "app/nativo.js")), "falta el puente nativo");
+assert.ok(fs.existsSync(path.join(RAIZ, "android/app/build.gradle")), "falta el proyecto Android");
+assert.ok(fs.existsSync(path.join(RAIZ, "android/gradlew")), "falta el wrapper de Gradle");
+assert.ok(fs.existsSync(path.join(RAIZ, "ios/App/App.xcodeproj/project.pbxproj")), "falta el proyecto iOS");
+assert.ok(fs.existsSync(path.join(RAIZ, "ios/App/App/Info.plist")), "falta el Info.plist de iOS");
+const manifiestoAndroid = fs.readFileSync(path.join(RAIZ, "android/app/src/main/AndroidManifest.xml"), "utf8");
+assert.ok(manifiestoAndroid.includes("android.permission.INTERNET"), "la app necesita red");
+assert.equal(manifiestoAndroid.includes("android.permission.CAMERA"), false, "la app no pide cámara");
+assert.ok(manifiestoAndroid.includes("networkSecurityConfig"), "la app debe exigir HTTPS");
+assert.ok(fs.existsSync(path.join(RAIZ, "assets/iconos/icono-512.png")), "faltan los iconos de la app");
+assert.ok(fs.existsSync(path.join(RAIZ, "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png")));
+const puenteNativo = fs.readFileSync(path.join(RAIZ, "app/nativo.js"), "utf8");
+for (const plugin of ["@capacitor/core", "@capacitor/status-bar", "@capacitor/share", "@capacitor/network"]) {
+  assert.ok(puenteNativo.includes(plugin), "el puente nativo debe usar " + plugin);
+}
+
+// Los orígenes de la WebView nativa son de confianza para las rutas que escriben.
+process.env.TALLER_ORIGENES = "";
+assert.equal(httpMod.mismoOrigen({ headers: { origin: "https://localhost", host: "taller.vercel.app" } }), true);
+assert.equal(httpMod.mismoOrigen({ headers: { origin: "capacitor://localhost", host: "taller.vercel.app" } }), true);
+assert.equal(httpMod.mismoOrigen({ headers: { origin: "https://sitio-ajeno.example", host: "taller.vercel.app" } }), false);
+assert.equal(
+  httpMod.solicitudConfiable({ headers: { origin: "https://localhost" } }),
+  true,
+  "la app nativa puede publicar APIs"
+);
 const configVercel = JSON.parse(fs.readFileSync(path.join(RAIZ, "vercel.json"), "utf8"));
 const cabecerasVercel = JSON.stringify(configVercel.headers);
 assert.ok(cabecerasVercel.includes("Content-Security-Policy"));
@@ -1333,6 +1394,8 @@ try {
     ["/docs", 200],
     ["/privacidad", 200],
     ["/assets/estilos.css", 200],
+    ["/configuracion.js", 200],
+    ["/assets/iconos/icono-192.png", 200],
     ["/api/salud", 200],
     ["/api/fuentes?github=0", 200],
     ["/api/ejemplo-notas/notas", 200],

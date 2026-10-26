@@ -1,0 +1,5 @@
+# Carpetas de la app nativa: no se publican como sitio estático.
+android
+ios
+app-web
+__pycache__

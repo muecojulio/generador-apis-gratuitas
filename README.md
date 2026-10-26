@@ -1,8 +1,17 @@
 # Taller de APIs gratuitas
 
-Describe una API en la página y este repositorio la publica en la nube. Cada API nace como una carpeta
+Describe una API en la aplicación y este repositorio la publica en la nube. Cada API nace como una carpeta
 dentro de `api/` y queda viva en una dirección como `https://TU-SITIO.vercel.app/api/tienda-barrio`, con
 `GET`, `POST`, `PUT` y `DELETE` de verdad.
+
+**Interfaz de producto, no de demo.** El taller es una aplicación con barra lateral y pestañas —Resumen,
+Diseñar API, Consola de pruebas, Mis APIs, APIs públicas— más una pantalla de Ajustes con tema claro/oscuro y
+cuatro acentos, y una consola de pruebas con latencia y ETag en vivo.
+
+**Aplicación nativa de verdad.** El repositorio incluye proyectos de Capacitor para **Android**
+(`android/`, Gradle + SDK 34) e **iOS** (`ios/`, Xcode + Swift 13+): icono, pantalla de arranque, barra de
+estado, háptica, compartir nativo y botón atrás. Se instala como cualquier app; no es una web disfrazada.
+Guía completa: **[docs/APP-NATIVA.md](docs/APP-NATIVA.md)**.
 
 **Coste: 0 €, para siempre.** GitHub Free + Vercel Hobby + modelos de IA de acceso libre. Ni tarjetas, ni
 claves de pago, ni servicios comerciales de OpenAI.
@@ -18,6 +27,9 @@ Además, cada API incluye:
 - **Catálogo de APIs públicas sin clave** en `/api/fuentes`, descubierto del repositorio
   [public-apis/public-apis](https://github.com/public-apis/public-apis), con copia local.
 - **Caché en memoria, índices por identificador y privacidad explicada** en `/privacidad`.
+- **App nativa para Android e iOS** con la misma interfaz, servidor configurable y avisos de red.
+- **Diseño profesional y accesible**: tema claro y oscuro, cuatro acentos, navegación por pestañas, iconos SVG
+  propios y CSS compilado sin CDNs (CSP estricta).
 
 ---
 
@@ -118,6 +130,14 @@ api/
   fuentes.js               -> APIs públicas sin clave (curadas y descubiertas en GitHub)
   proveedores.js           -> estado de los modelos gratuitos (con y sin clave)
 lib/                       -> motor, lector, IA gratuita, OpenAPI, token, límites, caché, índices
+index.html                 -> la interfaz del producto (pestañas, temas, ajustes)
+script.js                  -> diseñador en vivo, consola, catálogo, ajustes y arranque nativo
+configuracion.js           -> entorno (web o app) y tema aplicado antes del primer pintado
+app/nativo.js              -> puente de Capacitor (barra de estado, háptica, compartir, red)
+capacitor.config.json      -> identidad de la app nativa
+android/ ios/              -> proyectos nativos completos (Gradle y Xcode)
+scripts/construir-app.mjs  -> npm run app:preparar | app:sync | app:android | app:apk
+scripts/generar-iconos.mjs -> npm run app:iconos (iconos y pantallas de arranque)
 lib/publicas.js            -> normaliza países, monedas y ciudades sin clave ni registro
 lib/fuentes-github.js      -> lee public-apis y guarda una copia local de respaldo
 scripts/                   -> generación, pruebas, sincronización, medición y servidor local
@@ -142,13 +162,45 @@ Tres detalles importantes, explicados sin tecnicismos:
 
 ---
 
+## La interfaz
+
+La aplicación se organiza en pestañas (barra lateral en escritorio, barra inferior en el móvil):
+
+| Pestaña | Qué hace |
+| --- | --- |
+| **Resumen** | Estado del motor, métricas, cadena de IA y accesos rápidos. |
+| **Diseñar API** | Plantillas, bloques de campos, límites, token y vista previa del plano en vivo. |
+| **Consola de pruebas** | Peticiones reales con latencia, ETag y código en cURL, JavaScript, Python y HTTPie. |
+| **Mis APIs** | Catálogo de las APIs publicadas, con enlaces a su documentación OpenAPI. |
+| **APIs públicas** | Servicios abiertos que normalizan datos y el catálogo `public-apis`. |
+| **Ajustes y app** | Tema claro/oscuro, cuatro acentos, servidor del taller y estado de la app nativa. |
+
+El tema y el acento se guardan en el dispositivo; el servidor también (útil en la app nativa). Todo el color
+viaja por variables CSS: sin estilos en línea, con CSP estricta y sin peticiones a terceros.
+
+## La app nativa
+
+```bash
+npm run app:preparar   # interfaz + configuración + puente de Capacitor
+npm run app:android    # abre Android Studio
+npm run app:apk        # APK de depuración en android/app/build/outputs/apk/debug/
+npm run app:ios        # abre Xcode (macOS)
+```
+
+Los proyectos nativos ya están en el repositorio (`android/`, `ios/`), con iconos, splash y permisos
+mínimos (solo red). El flujo `.github/workflows/app-android.yml` compila el APK en cada Release y lo adjunta.
+Detalles, firma y solución de problemas: **[docs/APP-NATIVA.md](docs/APP-NATIVA.md)**.
+
+---
+
 ## Uso diario
 
-1. Abre tu sitio en Vercel.
-2. Escribe el nombre de la ruta (por ejemplo `tienda-barrio`) y la descripción de tablas, campos y acciones.
+1. Abre tu sitio en Vercel (o la app).
+2. Ve a **Diseñar API**, escribe el nombre de la ruta (por ejemplo `tienda-barrio`) y la descripción de
+   tablas, campos y acciones.
 3. Ajusta si quieres: solo lectura, token, registros, tamaño o retención.
-4. Pulsa **Generar API en la nube**.
-5. En uno o dos minutos, `/api/tienda-barrio` responde.
+4. Pulsa **Publicar API en la nube**.
+5. En uno o dos minutos, `/api/tienda-barrio` responde. Pulsa **Probar en consola** para verlo al instante.
 
 Ya hay tres APIs de ejemplo listas para probar: `/api/ejemplo-notas` (la del taller), `/api/demo-recetas`
 (creada de verdad por el flujo, sin ninguna clave, a partir de una descripción en español) y

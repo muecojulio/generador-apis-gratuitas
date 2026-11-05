@@ -1,12 +1,15 @@
 node_modules
+.grok
 .vercel
-.DS_Store
+dist
+.env
+.env.*
+.env.local
+.env.*.local
 *.log
-
-# Salidas de la app nativa (se generan con npm run app:preparar)
-app-web/
-android/app/build/
-android/.gradle/
-ios/App/Pods/
-*.apk
-*.aab
+.DS_Store
+.next
+out
+build
+coverage
+artifacts
